@@ -1,0 +1,35 @@
+langchain==0.1.0
+# 基础依赖
+python>=3.8
+pydantic>=2.5.2
+
+# LangChain相关依赖
+langchain>=0.1.0
+langgraph>=0.6.0
+langgraph-sdk>=0.2.0
+langgraph-checkpoint>=2.0.0
+langgraph-prebuilt>=0.6.0
+
+# LLM集成
+langchain-ollama>=0.1.0
+ollama>=0.1.4
+
+# 向量存储
+langchain-chroma>=0.1.0
+chromadb>=0.4.22
+
+# 嵌入模型
+sentence-transformers>=2.2.2
+
+# 工具和实用程序
+duckduckgo-search>=4.1.0
+ddgs>=9.5.0
+
+# 环境配置
+python-dotenv>=1.0.0
+
+# 数据库
+sqlalchemy>=2.0.0
+
+# 其他
+tqdm>=4.66.0
