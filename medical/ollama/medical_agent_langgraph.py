@@ -138,7 +138,7 @@ class MedicalAgentLangGraph:
         texts = text_splitter.split_documents(documents)
         
         # 创建向量存储 - 使用FakeEmbeddings避免下载外部模型
-        print("使用FakeEmbeddings创建向量存储...")
+        # print("使用FakeEmbeddings创建向量存储...")
         vectorstore = Chroma.from_documents(texts, FakeEmbeddings(size=768))
         
         return vectorstore

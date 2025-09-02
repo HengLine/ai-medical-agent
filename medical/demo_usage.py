@@ -11,13 +11,13 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # 导入医疗智能体
-from langchain.medical_agent import MedicalAgent
+from medical.ollama.medical_agent import MedicalAgent
 
 
 def run_demo():
     """运行医疗智能体演示"""
     print("===== AI医疗问答系统演示 =====")
-    print("正在初始化医疗智能体...")
+    # print("正在初始化医疗智能体...")
     
     try:
         # 创建医疗智能体实例

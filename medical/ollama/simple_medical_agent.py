@@ -35,12 +35,12 @@ class SimpleMedicalAgent:
             return_source_documents=True
         )
         
-        print("简化版医疗代理初始化完成")
+        # print("简化版医疗代理初始化完成")
     
     def _load_vectorstore(self):
         """加载向量存储，使用最小配置"""
         # 获取data目录
-        data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "../../data")
+        data_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), "../../data")
         
         # 只加载elderly_diseases_prevention.txt文件用于测试
         files = glob.glob(os.path.join(data_dir, "elderly_diseases_prevention.txt"))

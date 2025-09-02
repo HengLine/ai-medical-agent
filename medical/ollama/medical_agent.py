@@ -2,16 +2,19 @@ import os
 import sys
 import glob
 import os
+import warnings
+
+from langchain_core._api import LangChainDeprecationWarning
+warnings.filterwarnings("ignore", category=LangChainDeprecationWarning)
 
 from langchain.agents import initialize_agent, Tool
+from langchain.chains import RetrievalQA
 # 按照最新的langchain导入规范，从langchain_community导入组件
-# from langchain_community.chat_models import ChatOllama
 from langchain_ollama import ChatOllama
 from langchain_chroma import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.document_loaders import TextLoader
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.chains import RetrievalQA
 from langchain_community.tools import DuckDuckGoSearchRun
 
 # 添加项目根目录到Python路径，以便导入tools模块

@@ -1,3 +1,4 @@
+# from langchain_community.chains import RetrievalQA
 from langchain.chains import RetrievalQA
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings

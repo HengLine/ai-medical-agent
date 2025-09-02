@@ -1,6 +1,6 @@
-langchain==0.1.0
+# langchain==0.1.0
 # 基础依赖
-python>=3.8
+# python>=3.10
 pydantic>=2.5.2
 
 # LangChain相关依赖
