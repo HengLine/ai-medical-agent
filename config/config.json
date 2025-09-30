@@ -1,0 +1,73 @@
+{
+  "llm": {
+    "ollama": {
+      "model_name": "llama3.2",
+      "base_url": "http://localhost:11434",
+      "timeout": 300,
+      "temperature": 0.1,
+      "keep_alive": 300,
+      "top_p": 0.95,
+      "max_tokens": 1024
+    },
+    "vllm": {
+      "model": "E:\\AI\\models\\vllm\\gpt2",
+      "temperature": 0.1,
+      "max_tokens": 1024,
+      "top_p": 0.95,
+      "vllm_kwargs": {
+        "device": "cpu",
+        "max_model_len": 4096,
+        "trust_remote_code": true,
+        "dtype": "auto",
+        "disable_log_requests": true,
+        "disable_log_stats": false
+      },
+      "embeddings": {
+        "model_name": "E:\\AI\\models\\vllm\\bge-small-zh",
+        "model_kwargs": {
+          "device": "cpu"
+        },
+        "encode_kwargs": {
+          "normalize_embeddings": true
+        }
+      }
+    },
+    "api": {
+      "api_key": "",
+      "api_url": "https://api.openai.com/v1",
+      "model": "gpt-4o",
+      "temperature": 0.1,
+      "max_tokens": 2048
+    }
+  },
+  "default_llm": "ollama",
+  "retrieval": {
+    "chain_type": "stuff",
+    "search_kwargs": {
+      "k": 3
+    },
+    "return_source_documents": true
+  },
+  "text_splitter": {
+    "chunk_size": 1000,
+    "chunk_overlap": 200
+  },
+  "knowledge_base": {
+    "data_dir": "data",
+    "medical_keywords": [
+      "medical",
+      "health",
+      "disease",
+      "treatment",
+      "medicine",
+      "symptoms"
+    ]
+  },
+  "example_questions": [
+    "什么是高血压？如何预防？",
+    "老年高血压患者有哪些注意事项？",
+    "脑血栓的高危因素有哪些？如何预防？",
+    "糖尿病的预防措施有哪些？",
+    "老年人如何保持健康的生活方式？"
+  ]
+}
