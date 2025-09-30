@@ -60,6 +60,7 @@ class OpenAIGenerativeAgent(BaseMedicalAgent):
                 api_key=api_key,
                 base_url=api_url,
                 model=model_name,
+                streaming=openai_config.get("streaming", True),
                 temperature=openai_config.get("temperature", 0.1),
                 max_tokens=openai_config.get("max_tokens", 2048)
             )

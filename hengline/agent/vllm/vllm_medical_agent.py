@@ -10,7 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'
 from hengline.agent.base_agent import BaseMedicalAgent
 
 # 导入VLLM特定的库
-from langchain_community.llms import VLLM
+from langchain_community.llms.vllm import VLLM
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
@@ -52,7 +52,7 @@ class VLLMMedicalAgent(BaseMedicalAgent):
             llm = VLLM(
                 model=vllm_config.get("model", "gpt2"),  # 默认模型
                 temperature=vllm_config.get("temperature", 0.1),
-                max_tokens=vllm_config.get("max_tokens", 1024),
+                max_new_tokens=vllm_config.get("max_tokens", 1024),
                 top_p=vllm_config.get("top_p", 0.95),
                 vllm_kwargs=vllm_config.get("vllm_kwargs", {})
             )

@@ -211,7 +211,7 @@ class OllamaGenerativeAgent(BaseMedicalAgent):
 
 if __name__ == "__main__":
     # 创建生成式医疗智能体实例
-    generative_agent = GenerativeMedicalAgent()
+    generative_agent = OllamaGenerativeAgent()
 
     # 从配置中获取示例问题
     example_questions = generative_agent.config_reader.get_example_questions()

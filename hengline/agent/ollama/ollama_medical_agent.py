@@ -31,7 +31,7 @@ class OllamaMedicalAgent(BaseMedicalAgent):
                     base_url=ollama_config.get("base_url", "http://localhost:11434"),
                     keep_alive=ollama_config.get("keep_alive", 300),
                     top_p=ollama_config.get("top_p", 0.95),
-                    max_tokens=ollama_config.get("max_tokens", 1024)
+                    num_predict=ollama_config.get("max_tokens", 1024)
                 )
                 self.model_supports_tools = True
                 logger.info(f"成功初始化Ollama模型: {ollama_config.get('model_name', 'llama3.2')}")

@@ -33,13 +33,13 @@ class OpenAIMedicalAgent(BaseMedicalAgent):
         """初始化远程API语言模型"""
         try:
             # 从配置中获取远程API参数
-            api_config = self.config_reader.get_api_config()
+            openai_config = self.config_reader.get_api_config()
 
-            if not api_config:
+            if not openai_config:
                 raise ValueError("未找到远程API配置")
 
             # 检查必要的配置项
-            api_key = api_config.get("api_key", "")
+            api_key = openai_config.get("api_key", "")
             if not api_key:
                 logger.warning("未提供API密钥，尝试使用环境变量")
                 api_key = os.environ.get("OPENAI_API_KEY", "")
@@ -50,14 +50,15 @@ class OpenAIMedicalAgent(BaseMedicalAgent):
 
             # 初始化ChatOpenAI客户端
             llm = ChatOpenAI(
-                model=api_config.get("model", "gpt-4o"),
-                temperature=api_config.get("temperature", 0.1),
-                max_tokens=api_config.get("max_tokens", 2048),
                 api_key=api_key,
-                base_url=api_config.get("api_url", None)  # 如果使用自定义API端点
+                model=openai_config.get("model", "gpt-4o"),
+                temperature=openai_config.get("temperature", 0.1),
+                streaming=openai_config.get("streaming", True),
+                max_tokens=openai_config.get("max_tokens", 2048),
+                base_url=openai_config.get("api_url", None)  # 如果使用自定义API端点
             )
 
-            logger.info(f"远程API模型初始化成功: {api_config.get('model', 'gpt-4o')}")
+            logger.info(f"远程API模型初始化成功: {openai_config.get('model', 'gpt-4o')}")
             return llm
         except Exception as e:
             logger.error(f"远程API模型初始化失败: {str(e)}")
@@ -208,7 +209,7 @@ class OpenAIMedicalAgent(BaseMedicalAgent):
 
 if __name__ == "__main__":
     # 创建基于远程API的医疗智能体实例
-    medical_agent = RemoteAPIMedicalAgent()
+    medical_agent = OpenAIMedicalAgent()
 
     # 从配置中获取示例问题
     example_questions = medical_agent.config_reader.get_example_questions()
