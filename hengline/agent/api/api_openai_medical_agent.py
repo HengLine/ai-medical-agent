@@ -33,7 +33,7 @@ class OpenAIMedicalAgent(BaseMedicalAgent):
         """初始化远程API语言模型"""
         try:
             # 从配置中获取远程API参数
-            openai_config = self.config_reader.get_api_config()
+            openai_config = self.config_reader.get_llm_config("openai")
 
             if not openai_config:
                 raise ValueError("未找到远程API配置")
@@ -72,7 +72,7 @@ class OpenAIMedicalAgent(BaseMedicalAgent):
             data_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), '../../', kb_config.get("data_dir", "data"))
 
             # 获取API配置
-            api_config = self.config_reader.get_api_config()
+            api_config = self.config_reader.get_llm_config("openai")
             api_key = api_config.get("api_key", "") or os.environ.get("OPENAI_API_KEY", "")
 
             # 初始化嵌入模型

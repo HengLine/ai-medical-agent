@@ -5,7 +5,7 @@
       "base_url": "http://localhost:11434",
       "timeout": 300,
       "temperature": 0.1,
-      "keep_alive": 300,
+      "keep_alive": 600,
       "top_p": 0.95,
       "max_tokens": 1024
     },
@@ -41,13 +41,13 @@
     },
     "qwen": {
       "api_key": "",
-      "api_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-      "model": "qwen-3",
+      "api_url": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+      "model": "qwen-plus",
       "temperature": 0.1,
       "max_tokens": 2048
     }
   },
-  "default_llm": "ollama",
+  "default_llm": "qwen",
   "retrieval": {
     "chain_type": "stuff",
     "search_kwargs": {

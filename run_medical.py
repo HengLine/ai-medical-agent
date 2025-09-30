@@ -7,8 +7,17 @@
 
 import os
 import sys
+from dotenv import load_dotenv
 
 import uvicorn
+
+# 加载.env文件中的环境变量
+dotenv_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), '.env')
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path)
+    print(f"已加载.env文件: {dotenv_path}")
+else:
+    print(f"警告: 未找到.env文件，将使用系统环境变量")
 
 # 确保项目根目录在Python路径中
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))

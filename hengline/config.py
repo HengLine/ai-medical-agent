@@ -13,10 +13,13 @@ import json
 import os
 from typing import Dict, Any, List
 
+# 加载dotenv以支持.env文件
+from dotenv import load_dotenv
+
 
 class ConfigReader:
     """
-    从 config.json 中读取配置的工具类
+    从 config.json 中读取配置的工具类，支持配置优先级：JSON配置 > 环境变量
     """
 
     def __init__(self, config_path: str = None):
@@ -24,12 +27,42 @@ class ConfigReader:
         初始化配置读取器
         :param config_path: 配置文件路径，默认为项目根目录下的 config/config.json
         """
+        # 加载.env文件
+        load_dotenv()
+        
         self.config_path = config_path or os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             "config",
             "config.json"
         )
         self._config = self._load_config()
+    
+    def get_config_with_env_fallback(self, module_name: str, key: str, default: Any = None, env_var_name: str = None) -> Any:
+        """
+        先从JSON配置中获取值，如果为空则从环境变量中获取
+        
+        :param module_name: 模块名称
+        :param key: 配置项键
+        :param default: 默认值
+        :param env_var_name: 环境变量名称，如果未指定则自动生成 (MODULE_KEY)
+        :return: 配置值
+        """
+        # 1. 首先从JSON配置中获取值
+        config_value = self.get_value(module_name, key, default)
+        
+        # 2. 如果JSON配置中有值且不为空，直接返回
+        if config_value not in (None, ""):
+            return config_value
+        
+        # 3. 如果JSON配置中没有值或为空，尝试从环境变量中获取
+        # 生成环境变量名（默认为模块名_键名，大写）
+        if env_var_name is None:
+            env_var_name = f"{module_name.upper()}_{key.upper()}"
+        
+        # 从环境变量中获取值
+        env_value = os.environ.get(env_var_name, default)
+        
+        return env_value
 
     def _load_config(self) -> Dict[str, Any]:
         """
@@ -80,7 +113,7 @@ class ConfigReader:
     def get_llm_config(self, llm_type: str) -> Dict[str, Any]:
         """
         获取特定类型LLM的配置
-        :param llm_type: LLM类型（'ollama', 'vllm', 'api'）
+        :param llm_type: LLM类型（'ollama', 'vllm', 'qwen', 'openai'）
         :return: LLM配置字典
         """
         llm_configs = self._config.get("llm", {})
@@ -100,12 +133,6 @@ class ConfigReader:
         """
         return self.get_llm_config("vllm")
 
-    def get_api_config(self) -> Dict[str, Any]:
-        """
-        获取远程API配置（原remote_api）
-        :return: 远程API配置字典
-        """
-        return self.get_llm_config("api")
 
     def get_retrieval_config(self) -> Dict[str, Any]:
         """
@@ -136,6 +163,22 @@ class ConfigReader:
         :param default: 默认值
         :return: 配置项值
         """
+        # 检查是否有嵌套的配置路径（如 'qwen.model'）
+        if '.' in key:
+            parts = key.split('.')
+            parent_key = parts[0]
+            child_key = '.'.join(parts[1:])
+            
+            # 先尝试从llm.llm_type.parent_key中获取
+            llm_config = self.get_llm_config(llm_type)
+            if parent_key in llm_config and isinstance(llm_config[parent_key], dict):
+                return llm_config[parent_key].get(child_key, default)
+            
+            # 如果没找到，再尝试直接从llm.parent_key中获取（兼容之前的配置结构）
+            parent_config = self.get_llm_config(parent_key)
+            return parent_config.get(child_key, default)
+        
+        # 如果是简单键，直接从llm.llm_type中获取
         llm_config = self.get_llm_config(llm_type)
         return llm_config.get(key, default)
 
@@ -163,3 +206,57 @@ class ConfigReader:
             generative_config["temperature"] = generative_config.get("temperature", 0.7)
             generative_config["max_tokens"] = generative_config.get("max_tokens", 2048)
         return generative_config
+    
+    def get_openai_api_key(self, default: str = "") -> str:
+        """
+        获取OpenAI API密钥，优先从JSON配置中获取，为空则从环境变量获取
+        
+        :param default: 默认值
+        :return: OpenAI API密钥
+        """
+        # 1. 先从llm.openai.api_key配置中获取
+        llm_config = self.get_module_config("llm")
+        openai_config = llm_config.get("openai", {})
+        api_key = openai_config.get("api_key", "")
+        
+        # 2. 如果JSON配置中有值且不为空，直接返回
+        if api_key not in (None, ""):
+            return api_key
+        
+        # 3. 如果JSON配置中没有值或为空，从环境变量OPENAI_API_KEY获取
+        return os.environ.get("OPENAI_API_KEY", default)
+    
+    def get_qwen_api_key(self, default: str = "") -> str:
+        """
+        获取通义千问API密钥，优先从JSON配置中获取，为空则从环境变量获取
+        
+        :param default: 默认值
+        :return: 通义千问API密钥
+        """
+        # 1. 先从llm.qwen.api_key配置中获取
+        llm_config = self.get_module_config("llm")
+        qwen_config = llm_config.get("qwen", {})
+        api_key = qwen_config.get("api_key", "")
+        
+        # 2. 如果JSON配置中有值且不为空，直接返回
+        if api_key not in (None, ""):
+            return api_key
+        
+        # 3. 如果JSON配置中没有值或为空，从环境变量DASHSCOPE_API_KEY获取
+        return os.environ.get("DASHSCOPE_API_KEY", default)
+    
+    def get_api_key_for_llm(self, llm_type: str, default: str = "") -> str:
+        """
+        根据LLM类型获取对应的API密钥
+        
+        :param llm_type: LLM类型（'openai', 'qwen'等）
+        :param default: 默认值
+        :return: API密钥
+        """
+        if llm_type == "openai":
+            return self.get_openai_api_key(default)
+        elif llm_type == "qwen":
+            return self.get_qwen_api_key(default)
+        else:
+            # 其他LLM类型可能不需要API密钥
+            return default
