@@ -169,8 +169,13 @@ class QwenGenerativeAgent(BaseMedicalAgent):
                 "topic": topic.strip()
             }
 
+            # 确保生成链不为None
+            chain = self.generative_chains[generation_type]
+            if chain is None:
+                return f"生成链 {generation_type} 初始化失败"
+
             # 调用生成链
-            generated_content = self.generative_chains[generation_type].invoke(input_data)
+            generated_content = chain.invoke(input_data)
 
             return generated_content
         except Exception as e:

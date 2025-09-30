@@ -79,7 +79,7 @@ if __name__ == "__main__":
     parser.add_argument('--reload', action='store_true', help='开发模式下启用自动重载')
     parser.add_argument(
         "--type",
-        choices=["ollama", "vllm", "api", "generative"],
+        choices=["ollama", "vllm", "openai", "qwen"],
         default="ollama",
         help="选择智能体的后端类型 (默认: ollama)"
     )

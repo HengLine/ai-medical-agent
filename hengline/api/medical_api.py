@@ -74,10 +74,10 @@ def register_routes(app: FastAPI):
             if default_llm == "ollama":
                 all_config["llm"][default_llm]["base_url"] = config.api_url
                 all_config["llm"][default_llm]["model_name"] = config.models
-            elif default_llm == "api":
-                all_config["llm"][default_llm]["api_url"] = config.api_url
-                all_config["llm"][default_llm]["model"] = config.models
             elif default_llm == "vllm":
+                all_config["llm"][default_llm]["model"] = config.models
+            else:
+                all_config["llm"][default_llm]["api_url"] = config.api_url
                 all_config["llm"][default_llm]["model"] = config.models
 
             # 更新通用配置

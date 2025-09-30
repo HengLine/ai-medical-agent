@@ -174,6 +174,11 @@ class OpenAIMedicalAgent(BaseMedicalAgent):
                 return_source_documents=retrieval_config.get("return_source_documents", True)
             )
 
+            # 确保检索链不为None
+            if retrieval_chain is None:
+                logger.error("创建检索链失败，返回值为None")
+                return None
+
             logger.info("远程API检索链创建成功")
             return retrieval_chain
         except Exception as e:

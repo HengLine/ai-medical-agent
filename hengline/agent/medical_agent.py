@@ -84,7 +84,7 @@ def run_interactive_mode(agent: object, agent_type: str):
                 user_question = input("\n请输入您的问题: ")
                 if user_question.lower() in ['退出', 'quit', 'exit']:
                     # 对于远程API智能体，显示API调用统计
-                    if agent_type == "api" and hasattr(agent, "get_api_stats"):
+                    if agent_type == "openai" and hasattr(agent, "get_api_stats"):
                         stats = agent.get_api_stats()
                         logger.info(f"\nAPI调用统计: {stats}")
                     logger.info("感谢使用医疗智能体，再见！")

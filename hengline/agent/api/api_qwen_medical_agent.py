@@ -10,7 +10,8 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
 
 # 导入日志模块
-from hengline.logger import info, logger
+from hengline.logger import debug, info, logger
+from utils.log_utils import print_log_exception
 
 # 从基类导入
 from hengline.agent.base_agent import BaseMedicalAgent, MedicalAgentState
@@ -185,6 +186,7 @@ class QwenMedicalAgent(BaseMedicalAgent):
                 return str(result)
         except Exception as e:
             logger.error(f"查询知识库时出错: {str(e)}")
+            print_log_exception()
             return f"查询知识库时出错: {str(e)}"
 
     def extract_symptoms(self, text):
@@ -213,6 +215,7 @@ class QwenMedicalAgent(BaseMedicalAgent):
             return symptoms
         except Exception as e:
             logger.error(f"提取症状时出错: {str(e)}")
+            print_log_exception()
             return f"提取症状时出错: {str(e)}"
 
     def assess_severity(self, symptoms):
@@ -298,9 +301,10 @@ class QwenMedicalAgent(BaseMedicalAgent):
                 return "智能体初始化失败，请检查配置"
 
             # 如果模型支持工具调用，使用LangGraph智能体
-            if self.model_supports_tools and hasattr(self, "agent"):
+            if self.model_supports_tools and hasattr(self, "agent") and self.agent is not None:
                 logger.info(f"使用支持工具调用的LangGraph智能体回答问题: {question}")
 
+                debug(f"LangGraph智能体配置: {self.agent}")
                 # 执行智能体
                 result = self.agent.invoke({
                     "messages": [{"role": "user", "content": question}]
@@ -331,6 +335,7 @@ class QwenMedicalAgent(BaseMedicalAgent):
                 return answer
         except Exception as e:
             logger.error(f"运行智能体时出错: {str(e)}")
+            print_log_exception()
             return f"运行智能体时出错: {str(e)}"
 
 

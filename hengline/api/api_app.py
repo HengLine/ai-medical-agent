@@ -50,7 +50,7 @@ if __name__ == "__main__":
     parser.add_argument('--port', type=int, default=8000, help='服务监听端口')
     parser.add_argument(
         "--type",
-        choices=["ollama", "vllm", "api", "generative"],
+        choices=["ollama", "vllm", "openai", "qwen"],
         default="ollama",
         help="选择智能体的后端类型 (默认: ollama)"
     )
