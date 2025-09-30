@@ -14,6 +14,7 @@ from hengline.logger import logger
 
 # 从基类导入
 from hengline.agent.base_agent import BaseMedicalAgent
+from utils.log_utils import print_log_exception
 
 # 导入Qwen特定的库
 from langchain_community.chat_models import ChatTongyi
@@ -34,7 +35,8 @@ class QwenBaseAgent(BaseMedicalAgent):
         self.logger = logger
         
         # 调用基类初始化
-        super().__init__()
+        super().__init__("qwen")
+        
 
     def _initialize_llm(self):
         """初始化通义千问语言模型
@@ -110,18 +112,20 @@ class QwenBaseAgent(BaseMedicalAgent):
         logger.warning(f"模型 {model_name} 可能不支持完整的工具调用功能")
         return False
 
-    def load_medical_knowledge(self):
+    def load_medical_knowledge(self, agent_type: str):
         """加载医疗知识库数据，Qwen版本进行了优化"""
         try:
-
+            # 从配置中获取嵌入模型参数
+            embeddings_config = self.config_reader.get_embeddings_config(agent_type)
+            
             # 初始化嵌入模型 - Qwen版本可以使用开源嵌入模型或FakeEmbeddings
             try:
                 # 尝试使用HuggingFaceEmbeddings
                 from langchain_community.embeddings import HuggingFaceEmbeddings
                 embeddings = HuggingFaceEmbeddings(
-                    model_name="sentence-transformers/all-MiniLM-L6-v2",
-                    model_kwargs={"device": "cpu"},
-                    encode_kwargs={"normalize_embeddings": True}
+                    model_name=embeddings_config.get("model_name", "sentence-transformers/all-MiniLM-L6-v2"),
+                    model_kwargs=embeddings_config.get("model_kwargs", {"device": "cpu"}),
+                    encode_kwargs=embeddings_config.get("encode_kwargs", {"normalize_embeddings": True})
                 )
             except Exception as e:
                 logger.warning(f"初始化HuggingFaceEmbeddings失败，将使用FakeEmbeddings: {str(e)}")
@@ -153,14 +157,27 @@ class QwenBaseAgent(BaseMedicalAgent):
             )
             texts = text_splitter.split_documents(documents)
 
+            # 从配置中获取持久化目录
+            persist_dir = self.config_reader.get_persist_directory(agent_type)
+            
             # 创建向量存储
-            vectorstore = Chroma.from_documents(texts, embeddings)
-            logger.info(f"成功创建向量存储，包含{len(texts)}个文档块")
+            if persist_dir:
+                vectorstore = Chroma.from_documents(
+                    texts, 
+                    embeddings, 
+                    persist_directory=persist_dir
+                )
+                logger.info(f"成功创建持久化向量存储，包含{len(texts)}个文档块，持久化目录: {persist_dir}")
+            else:
+                vectorstore = Chroma.from_documents(texts, embeddings)
+                logger.info(f"成功创建向量存储，包含{len(texts)}个文档块")
+            
             return vectorstore
         except Exception as e:
             logger.error(f"加载医疗知识库时出错: {str(e)}")
+            print_log_exception()
             # 回退到基类的实现
-            return super().load_medical_knowledge()
+            return super().load_medical_knowledge(agent_type)
 
     def update_api_call_stats(self, tokens_used=0):
         """更新API调用统计信息

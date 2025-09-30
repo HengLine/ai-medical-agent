@@ -6,6 +6,10 @@ outputs/
 env/
 .env/
 data/
+chroma_db_ollama/
+chroma_db_vllm/
+chroma_db_openai/
+chroma_db_qwen/
 venv/
 temp/
 uploads/

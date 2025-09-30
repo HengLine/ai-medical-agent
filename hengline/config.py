@@ -231,5 +231,22 @@ class ConfigReader:
         # 3. 如果JSON配置中没有值或为空，从环境变量DASHSCOPE_API_KEY获取
         return os.environ.get("DASHSCOPE_API_KEY", default)
     
+    def get_vector_store_config(self) -> Dict[str, Any]:
+        """
+        获取向量存储配置
+        :return: 向量存储配置字典
+        """
+        return self.get_module_config("vector_store")
+        
+    def get_persist_directory(self, llm_type: str, default: str = None) -> str:
+        """
+        获取特定类型LLM的向量存储持久化目录
+        :param llm_type: LLM类型
+        :param default: 默认值
+        :return: 持久化目录路径
+        """
+        vector_store_config = self.get_vector_store_config()
+        persist_directories = vector_store_config.get("persist_directory", {})
+        return persist_directories.get(llm_type, default)
 
 config_reader = ConfigReader()

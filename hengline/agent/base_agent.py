@@ -34,9 +34,10 @@ class MedicalAgentState:
 class BaseMedicalAgent(ABC):
     """医疗智能体基类，定义通用接口和共享功能"""
 
-    def __init__(self):
+    def __init__(self, agent_type: str):
         # 初始化配置读取器
         self.config_reader = config_reader
+        self.agent_type = agent_type
 
         # 初始化医疗工具
         self.medical_tools = MedicalTools()
@@ -49,7 +50,7 @@ class BaseMedicalAgent(ABC):
             )
 
         # 加载RAG数据
-        self.vectorstore = self.load_medical_knowledge()
+        self.vectorstore = self.load_medical_knowledge(self.agent_type)
 
         # 创建网络搜索工具
         try:
@@ -136,7 +137,7 @@ class BaseMedicalAgent(ABC):
             return None
 
 
-    def check_knowledge_base(self):
+    def get_knowledge_files(self):
         """检查知识库是否存在"""
         files = []
 
@@ -156,7 +157,7 @@ class BaseMedicalAgent(ABC):
     def load_medical_documents(self):
         """加载医疗知识库数据"""
         # 获取data目录下的所有txt文件
-        files = self.check_knowledge_base()
+        files = self.get_knowledge_files()
         logger.info(f"发现 {len(files)} 个医疗知识库文件")
 
         if not files:
@@ -178,9 +179,12 @@ class BaseMedicalAgent(ABC):
         return documents
 
 
-    def load_medical_knowledge(self):
+    def load_medical_knowledge(self, agent_type: str):
         """加载医疗知识库数据"""
         try:
+            # 从配置中获取嵌入模型参数
+            embeddings_config = self.config_reader.get_embeddings_config(agent_type)
+            
             # 加载文档
             documents = self.load_medical_documents()
 
@@ -200,14 +204,28 @@ class BaseMedicalAgent(ABC):
             )
             texts = text_splitter.split_documents(documents)
 
+            # 从配置中获取持久化目录
+            persist_dir = self.config_reader.get_persist_directory(agent_type)
+            
             # 创建向量存储
-            vectorstore = Chroma.from_documents(texts, FakeEmbeddings(size=768))
+            if persist_dir:
+                vectorstore = Chroma.from_documents(
+                    texts, 
+                    FakeEmbeddings(size=768), 
+                    persist_directory=persist_dir
+                )
+                logger.info(f"成功创建持久化向量存储，包含{len(texts)}个文档块，持久化目录: {persist_dir}")
+            else:
+                vectorstore = Chroma.from_documents(texts, FakeEmbeddings(size=768))
+                logger.info(f"成功创建向量存储，包含{len(texts)}个文档块")
+            
             return vectorstore
         except Exception as e:
             logger.error(f"加载医疗知识库时出错: {str(e)}")
             from langchain_core.documents import Document
             empty_docs = [Document(page_content="这是一个空的医疗知识库文档", metadata={"source": "empty"})]
             return Chroma.from_documents(empty_docs, FakeEmbeddings(size=768))
+
 
     @tool
     def query_medical_knowledge_tool(self, query: str) -> str:

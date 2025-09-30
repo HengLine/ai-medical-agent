@@ -31,7 +31,8 @@ class OpenAIBaseAgent(BaseMedicalAgent):
         self.logger = logger
         
         # 调用基类初始化
-        super().__init__()
+        super().__init__("openai")
+        
 
     def _initialize_llm(self):
         """初始化OpenAI语言模型
@@ -74,12 +75,14 @@ class OpenAIBaseAgent(BaseMedicalAgent):
             logger.error(f"OpenAI API模型初始化失败: {str(e)}")
             return None
 
-    def load_medical_knowledge(self):
-        """加载医疗知识库数据，OpenAI版本使用OpenAIEmbeddings进行优化"""
+    def load_medical_knowledge(self, agent_type: str):
+        """加载医疗知识库数据，OpenAI版本进行了优化"""
         try:
-           
+            # 从配置中获取嵌入模型参数
+            embeddings_config = self.config_reader.get_embeddings_config(agent_type)
+            
             # 获取API配置
-            api_config = self.config_reader.get_llm_config("openai")
+            api_config = self.config_reader.get_llm_config(agent_type)
             api_key = api_config.get("api_key", "") or os.environ.get("OPENAI_API_KEY", "")
 
             # 初始化嵌入模型
@@ -88,16 +91,17 @@ class OpenAIBaseAgent(BaseMedicalAgent):
                     # 使用OpenAI的嵌入模型
                     embeddings = OpenAIEmbeddings(
                         api_key=api_key,
-                        model="text-embedding-3-small"  # 使用轻量级嵌入模型降低成本
+                        model=embeddings_config.get("model_name", "text-embedding-3-small"),
+                        model_kwargs=embeddings_config.get("model_kwargs", {})
                     )
                 else:
                     # 如果没有API密钥，使用开源的嵌入模型作为备选
                     logger.warning("未提供API密钥，将使用开源嵌入模型")
                     from langchain_community.embeddings import HuggingFaceEmbeddings
                     embeddings = HuggingFaceEmbeddings(
-                        model_name="sentence-transformers/all-MiniLM-L6-v2",
-                        model_kwargs={"device": "cpu"},
-                        encode_kwargs={"normalize_embeddings": True}
+                        model_name=embeddings_config.get("model_name", "sentence-transformers/all-MiniLM-L6-v2"),
+                        model_kwargs=embeddings_config.get("model_kwargs", {"device": "cpu"}),
+                        encode_kwargs=embeddings_config.get("encode_kwargs", {"normalize_embeddings": True})
                     )
             except Exception as e:
                 logger.warning(f"初始化嵌入模型失败，将使用FakeEmbeddings: {str(e)}")
@@ -129,14 +133,26 @@ class OpenAIBaseAgent(BaseMedicalAgent):
             )
             texts = text_splitter.split_documents(documents)
 
+            # 从配置中获取持久化目录
+            persist_dir = self.config_reader.get_persist_directory(agent_type)
+            
             # 创建向量存储
-            vectorstore = Chroma.from_documents(texts, embeddings)
-            logger.info(f"成功创建向量存储，包含{len(texts)}个文档块")
+            if persist_dir:
+                vectorstore = Chroma.from_documents(
+                    texts, 
+                    embeddings, 
+                    persist_directory=persist_dir
+                )
+                logger.info(f"成功创建持久化向量存储，包含{len(texts)}个文档块，持久化目录: {persist_dir}")
+            else:
+                vectorstore = Chroma.from_documents(texts, embeddings)
+                logger.info(f"成功创建向量存储，包含{len(texts)}个文档块")
+            
             return vectorstore
         except Exception as e:
             logger.error(f"加载医疗知识库时出错: {str(e)}")
             # 回退到基类的实现
-            return super().load_medical_knowledge()
+            return super().load_medical_knowledge(agent_type)
 
     def update_api_call_stats(self, tokens_used=0):
         """更新API调用统计信息

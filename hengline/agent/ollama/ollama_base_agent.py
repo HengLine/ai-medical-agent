@@ -23,7 +23,7 @@ class OllamaBaseAgent(BaseMedicalAgent):
         self.total_tokens_used = 0
 
         # 调用基类初始化
-        super().__init__()
+        super().__init__("ollama")
 
         # 使用项目的日志模块
         self.logger = logger
@@ -82,7 +82,8 @@ class OllamaBaseAgent(BaseMedicalAgent):
         supported_models = ["llama3.1", "llama3.2", "gemma2", "qwen3"]
         return any(supported in model_name.lower() for supported in supported_models)
 
-    def load_medical_knowledge(self):
+
+    def load_medical_knowledge(self, agent_type: str):
         """加载医疗知识库"""
         try:
             # 从配置中获取知识库路径
@@ -99,15 +100,17 @@ class OllamaBaseAgent(BaseMedicalAgent):
                 return False
             
             logger.info(f"开始加载医疗知识库，路径: {knowledge_path}")
+            # 从配置中获取嵌入模型参数
+            embeddings_config = self.config_reader.get_embeddings_config(agent_type)
             
             # 创建嵌入模型
             # Ollama没有内置的嵌入模型，所以使用HuggingFaceEmbeddings
             try:
                 from langchain_community.embeddings import HuggingFaceEmbeddings
                 embedding_model = HuggingFaceEmbeddings(
-                    model_name="all-MiniLM-L6-v2",
-                    model_kwargs={'device': 'cpu'},
-                    encode_kwargs={'normalize_embeddings': True}
+                    model_name=embeddings_config.get("model_name", "sentence-transformers/all-MiniLM-L6-v2"),
+                    model_kwargs=embeddings_config.get("model_kwargs", {"device": "cpu"}),
+                    encode_kwargs=embeddings_config.get("encode_kwargs", {"normalize_embeddings": True})
                 )
             except Exception as e:
                 logger.warning(f"初始化HuggingFace嵌入模型失败，使用FakeEmbeddings: {str(e)}")
@@ -149,20 +152,26 @@ class OllamaBaseAgent(BaseMedicalAgent):
                 logger.warning("未找到任何文档")
                 return False
             
+            # 从配置中获取文本分割参数
+            text_splitter_config = self.config_reader.get_module_config("text_splitter")
+
             # 分割文档
             text_splitter = CharacterTextSplitter(
-                chunk_size=1000,
-                chunk_overlap=200,
+                chunk_size=text_splitter_config.get("chunk_size", 1000),
+                chunk_overlap=text_splitter_config.get("chunk_overlap", 200),
                 separator="\n"
             )
             
             splits = text_splitter.split_documents(documents)
+
+            # 从配置中获取持久化目录
+            persist_dir = self.config_reader.get_persist_directory(agent_type)
             
             # 创建向量存储
             vectorstore = Chroma.from_documents(
                 documents=splits,
                 embedding=embedding_model,
-                persist_directory="./chroma_db_ollama"
+                persist_directory=persist_dir
             )
             
             logger.info(f"成功加载医疗知识库，共 {len(splits)} 个文档片段")
@@ -170,4 +179,4 @@ class OllamaBaseAgent(BaseMedicalAgent):
         except Exception as e:
             logger.error(f"加载医疗知识库时出错: {str(e)}")
             # 出错时回退到基类实现
-            return super().load_medical_knowledge()
+            return super().load_medical_knowledge(agent_type)

@@ -7,7 +7,16 @@
       "temperature": 0.1,
       "keep_alive": 600,
       "top_p": 0.95,
-      "max_tokens": 1024
+      "max_tokens": 1024,
+      "embeddings": {
+        "model_name": "all-MiniLM-L6-v2",
+        "model_kwargs": {
+          "device": "cpu"
+        },
+        "encode_kwargs": {
+          "normalize_embeddings": true
+        }
+      }
     },
     "vllm": {
       "model": "/opt/model/gpt2",
@@ -23,7 +32,7 @@
         "disable_log_stats": false
       },
       "embeddings": {
-        "model_name": "/opt/model/bge-small-zh",
+        "model_name": "sentence-transformers/all-MiniLM-L6-v2",
         "model_kwargs": {
           "device": "cpu"
         },
@@ -37,14 +46,28 @@
       "api_url": "https://api.openai.com/v1",
       "model": "gpt-4o",
       "temperature": 0.1,
-      "max_tokens": 2048
+      "max_tokens": 2048,
+      "embeddings": {
+        "model_name": "text-embedding-3-large",
+        "model_kwargs": {},
+        "encode_kwargs": {
+          "normalize_embeddings": true
+        }
+      }
     },
     "qwen": {
       "api_key": "",
       "api_url": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
       "model": "qwen-plus",
       "temperature": 0.1,
-      "max_tokens": 2048
+      "max_tokens": 2048,
+      "embeddings": {
+        "model_name": "text-embedding-v1",
+        "model_kwargs": {},
+        "encode_kwargs": {
+          "normalize_embeddings": true
+        }
+      }
     }
   },
   "default_llm": "qwen",
@@ -69,6 +92,14 @@
       "medicine",
       "symptoms"
     ]
+  },
+  "vector_store": {
+    "persist_directory": {
+      "ollama": "./chroma_db_ollama",
+      "vllm": "./chroma_db_vllm",
+      "openai": "./chroma_db_openai",
+      "qwen": "./chroma_db_qwen"
+    }
   },
   "example_questions": [
     "什么是高血压？如何预防？",
