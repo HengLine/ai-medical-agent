@@ -16,7 +16,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 
-class GenerativeMedicalAgent(BaseMedicalAgent):
+class OllamaGenerativeAgent(BaseMedicalAgent):
     """基于生成式AI的医疗智能体，专注于生成丰富、自然的医疗内容"""
     
     def __init__(self):

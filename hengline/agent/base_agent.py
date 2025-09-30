@@ -3,10 +3,10 @@ import sys
 from abc import ABC, abstractmethod
 from typing import List
 
-# LangChain和LangGraph相关导入
-from langchain.chains.retrieval_qa.base import RetrievalQA
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_chroma import Chroma
+# LangChain和LangGraph相关导入
+from langchain_community.chains.pebblo_retrieval.base import PebbloRetrievalQA
 from langchain_community.document_loaders import TextLoader
 from langchain_community.embeddings import FakeEmbeddings
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
@@ -78,13 +78,21 @@ class BaseMedicalAgent(ABC):
             # 从配置中获取检索链参数
             retrieval_config = self.config_reader.get_retrieval_config()
 
-            return RetrievalQA.from_chain_type(
+            return PebbloRetrievalQA.from_chain_type(
                 llm=self.llm,
+                app_name=retrieval_config.get("app_name", "medical_knowledge"),
+                description=retrieval_config.get("description", "Medical Knowledge Retrieval"),
+                owner=retrieval_config.get("owner", "hengline"),
                 chain_type=retrieval_config.get("chain_type", "stuff"),
+                chain_type_kwargs=retrieval_config.get("chain_type_kwargs", {}),
+                api_key=retrieval_config.get("api_key", None),
+                classifier_url=retrieval_config.get("classifier_url", None),
+                classifier_location=retrieval_config.get("classifier_location", "local"),
                 retriever=self.vectorstore.as_retriever(
                     search_kwargs=retrieval_config.get("search_kwargs", {"k": 3})
                 ),
-                return_source_documents=retrieval_config.get("return_source_documents", True)
+                return_source_documents=retrieval_config.get("return_source_documents", True),
+                verbose=retrieval_config.get("verbose", False)
             )
         except Exception as e:
             logger.error(f"创建检索链时出错: {str(e)}")

@@ -119,7 +119,6 @@ python run_medical.py
 python run_medical.py --type ollama
 python run_medical.py --type vllm
 python run_medical.py --type api
-python run_medical.py --type generative
 
 # 自定义主机和端口
 python run_medical.py --host 0.0.0.0 --port 8080
@@ -134,6 +133,7 @@ API文档地址：http://localhost:8000/docs
 - GET /api/health - 健康检查（检查API和智能体的运行状态）
 - PUT /api/config - 更新LLM配置（修改当前使用的LLM参数）
 - POST /api/query - 查询医疗智能体（向医疗智能体发送问题并获取回答）
+- POST /api/generate - 生成医疗内容（生成指定主题的医疗内容）
 
 ## 配置说明
 
@@ -299,6 +299,10 @@ curl -X PUT http://localhost:8000/api/config -H "Content-Type: application/json"
 # 查询问题
 curl -X POST http://localhost:8000/api/query -H "Content-Type: application/json" -d '{"question": "什么是高血压？", "request_id": "user_123"}'
 # 响应示例：{"answer":"高血压是一种常见的慢性疾病...","request_id":"user_123","sources":"可选，来源文档信息（如回答中包含）","timestamp":"2024-06-15T10:31:15Z"}
+
+# 生成医疗内容（仅在generative类型智能体下可用）
+curl -X POST http://localhost:8000/api/generate -H "Content-Type: application/json" -d '{"topic": "高血压的预防", "generation_type": "general_info", "request_id": "gen_123"}'
+# 响应示例：{"generated_content":"高血压的预防主要包括生活方式干预和定期监测...","generation_type":"general_info","request_id":"gen_123","timestamp":"2024-06-15T10:32:00Z"}
 ```
 
 ### 使用Python调用API
@@ -360,7 +364,38 @@ print("回答:", result["answer"])
 print("请求ID:", result["request_id"])
 print("时间戳:", result["timestamp"])
 if "sources" in result and result["sources"]:
-    print("来源:", result["sources"])
+    print("来源:", result["sources"])    
+
+# 生成医疗内容（仅在generative类型智能体下可用）
+def generate_medical_content(topic, generation_type="general_info", request_id=None):
+    url = "http://localhost:8000/api/generate"
+    headers = {"Content-Type": "application/json"}
+    data = {
+        "topic": topic,
+        "generation_type": generation_type
+    }
+    if request_id:
+        data["request_id"] = request_id
+    response = requests.post(url, headers=headers, data=json.dumps(data))
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return {"error": f"请求失败: {response.status_code}"}
+
+# 生成内容示例
+gen_result = generate_medical_content(
+    "高血压的预防", 
+    generation_type="general_info", 
+    request_id="gen_123"
+)
+if "error" not in gen_result:
+    print("\n===== 生成内容 ====")
+    print("生成内容:", gen_result["generated_content"])
+    print("生成类型:", gen_result["generation_type"])
+    print("请求ID:", gen_result["request_id"])
+    print("时间戳:", gen_result["timestamp"])
+else:
+    print("生成内容失败:", gen_result["error"])
 ```
 
 ## 知识库管理

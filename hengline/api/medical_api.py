@@ -2,10 +2,8 @@ import json
 import os
 import sys
 from datetime import datetime
-from typing import Optional, List, Union
 
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field, validator
 
 # 添加项目根目录到Python路径
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
@@ -16,69 +14,30 @@ from hengline.logger import logger
 # 导入配置读取器和智能体工厂
 from hengline.config import ConfigReader
 from hengline.agent.medical_agent import MedicalAgentFactory
+from hengline.api.medical_model import QueryRequest, QueryResponse, LLMConfig, ConfigResponse, GenerationRequest, GenerationResponse
 
 # 初始化配置读取器和医疗智能体
 config_reader = ConfigReader()
 medical_agent = None
+generative_agent = None
 # 存储从命令行传递的智能体类型
 global_agent_type = None
 
 
-# 请求和响应模型
-class QueryRequest(BaseModel):
-    """查询请求模型"""
-    question: str
-    request_id: Optional[str] = None
-
-
-class QueryResponse(BaseModel):
-    """查询响应模型"""
-    answer: str
-    request_id: Optional[str] = None
-    sources: Optional[str] = None
-    timestamp: str
-
-
-class LLMConfig(BaseModel):
-    """LLM配置模型"""
-    api_key: str = Field(default="")
-    api_url: str = Field(default="http://localhost:11434")
-    models: Union[str, List[str]] = Field(default="gemma3:4b")
-    temperature: float = Field(default=0.0, ge=0.0, le=1.0)
-    timeout: int = Field(default=300, ge=30)
-    top_p: float = Field(default=1.0, ge=0.0, le=1.0)
-    top_k: int = Field(default=40, ge=1)
-    repeat_penalty: float = Field(default=1.1, ge=0.0)
-
-    @validator('models')
-    def validate_models(cls, v):
-        if isinstance(v, list) and len(v) == 0:
-            raise ValueError("模型列表不能为空")
-        return v
-
-
-class ConfigResponse(BaseModel):
-    """配置响应模型"""
-    llm: LLMConfig
-    updated_at: str
-    message: str = "配置获取成功"
-
-
 def startup():
     """应用启动时初始化医疗智能体"""
-    global medical_agent
+    global medical_agent, generative_agent
     try:
         logger.info("正在初始化医疗智能体...")
         # 确定使用的智能体类型
         agent_type = global_agent_type if global_agent_type else config_reader.get_all_config().get("default_llm", "ollama")
         logger.info(f"使用 {agent_type} 类型的智能体")
         # 使用工厂创建相应类型的智能体
-        medical_agent = MedicalAgentFactory.create_agent(agent_type)
+        medical_agent, generative_agent = MedicalAgentFactory.create_agent(agent_type)
         logger.info("医疗智能体初始化成功")
 
         # 对于生成式智能体，额外记录支持的功能
-        if agent_type == "generative":
-            logger.info("生成式智能体支持多种内容生成模式：general_info, detailed_explanation, patient_education, medical_case")
+        logger.info("生成式智能体支持多种内容生成模式：general_info, detailed_explanation, patient_education, medical_case")
     except Exception as e:
         logger.error(f"医疗智能体初始化失败: {str(e)}")
         # 即使初始化失败，API仍会启动，但调用时会返回错误
@@ -184,3 +143,41 @@ def register_routes(app: FastAPI):
             return response
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"处理请求时发生错误: {str(e)}")
+
+    @app.post("/api/generate", response_model=GenerationResponse, summary="生成医疗内容", description="生成指定主题的医疗内容")
+    def generate_content(request: GenerationRequest):
+        """生成指定主题的医疗内容"""
+        if generative_agent is None:
+            raise HTTPException(status_code=503, detail="医疗智能体未初始化，请稍后再试")
+
+        if not request.topic or request.topic.strip() == "":
+            raise HTTPException(status_code=400, detail="主题不能为空")
+
+        try:
+            # 检查是否是生成式智能体
+            if not hasattr(generative_agent, "generate_content"):
+                # 获取当前使用的智能体类型
+                agent_type = config_reader.get_all_config().get("default_llm", "ollama")
+                raise HTTPException(status_code=400, 
+                                   detail=f"当前使用的是{agent_type}类型智能体，不支持生成式功能。请切换到generative类型智能体。")
+
+            # 调用生成式智能体生成内容
+            result = generative_agent.generate_content(
+                topic=request.topic,
+                generation_type=request.generation_type
+            )
+
+            # 构建响应
+            response = GenerationResponse(
+                generated_content=result,
+                generation_type=request.generation_type,
+                request_id=request.request_id,
+                timestamp=datetime.now().isoformat()
+            )
+
+            return response
+        except HTTPException as e:
+            # 重新抛出HTTP异常
+            raise e
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"生成内容时发生错误: {str(e)}")

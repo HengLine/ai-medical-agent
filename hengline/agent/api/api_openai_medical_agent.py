@@ -3,7 +3,7 @@ import sys
 from typing import Dict, Any
 
 # 添加项目根目录到Python路径
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
 
 # 导入日志模块
 from hengline.logger import logger
@@ -15,8 +15,8 @@ from hengline.agent.base_agent import BaseMedicalAgent
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 
-class RemoteAPIMedicalAgent(BaseMedicalAgent):
-    """基于远程API的医疗智能体"""
+class OpenAIMedicalAgent(BaseMedicalAgent):
+    """基于远程OpenAI API的医疗智能体"""
 
     def __init__(self):
         # 初始化API调用统计
