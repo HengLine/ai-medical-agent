@@ -70,7 +70,7 @@ def startup():
     try:
         logger.info("正在初始化医疗智能体...")
         # 确定使用的智能体类型
-        agent_type = global_agent_type if global_agent_type else config_reader.get_value("default_llm", "ollama")
+        agent_type = global_agent_type if global_agent_type else config_reader.get_all_config().get("default_llm", "ollama")
         logger.info(f"使用 {agent_type} 类型的智能体")
         # 使用工厂创建相应类型的智能体
         medical_agent = MedicalAgentFactory.create_agent(agent_type)

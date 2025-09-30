@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 # LangChain和LangGraph相关导入
-from langchain_community.chains.pebblo_retrieval.base import PebbloRetrievalQA
+from langchain.chains.retrieval_qa.base import RetrievalQA
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_community.document_loaders import TextLoader
@@ -78,7 +78,7 @@ class BaseMedicalAgent(ABC):
             # 从配置中获取检索链参数
             retrieval_config = self.config_reader.get_retrieval_config()
 
-            return PebbloRetrievalQA.from_chain_type(
+            return RetrievalQA.from_chain_type(
                 llm=self.llm,
                 chain_type=retrieval_config.get("chain_type", "stuff"),
                 retriever=self.vectorstore.as_retriever(
