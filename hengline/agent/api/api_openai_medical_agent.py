@@ -2,6 +2,8 @@ import os
 import sys
 from typing import Dict, Any
 
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+
 # 添加项目根目录到Python路径
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
 
@@ -9,25 +11,15 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../.
 from hengline.logger import logger
 
 # 从基类导入
-from hengline.agent.base_agent import BaseMedicalAgent
-
-# 导入远程API相关的库
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from hengline.agent.api.api_openai_base_agent import OpenAIBaseAgent
 
 
-class OpenAIMedicalAgent(BaseMedicalAgent):
+class OpenAIMedicalAgent(OpenAIBaseAgent):
     """基于远程OpenAI API的医疗智能体"""
 
     def __init__(self):
-        # 初始化API调用统计
-        self.api_call_count = 0
-        self.total_tokens_used = 0
-
         # 调用基类初始化
         super().__init__()
-
-        # 使用项目的日志模块
-        self.logger = logger
 
     def _initialize_llm(self):
         """初始化远程API语言模型"""
@@ -69,7 +61,7 @@ class OpenAIMedicalAgent(BaseMedicalAgent):
         try:
             # 从配置中获取知识库参数
             kb_config = self.config_reader.get_knowledge_base_config()
-            data_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), '../../', kb_config.get("data_dir", "data"))
+            data_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), '../../../', kb_config.get("data_dir", "data"))
 
             # 获取API配置
             api_config = self.config_reader.get_llm_config("openai")

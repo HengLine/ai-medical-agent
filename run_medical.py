@@ -36,7 +36,7 @@ def ensure_project_path():
 
 
 # 启动API服务
-def start_api_server(host: str = "0.0.0.0", port: int = 8000, reload: bool = False, agent_type: str = "ollama"):
+def start_api_server(host: str = "0.0.0.0", port: int = 8000, reload: bool = False, agent_type: str = None):
     """启动FastAPI服务"""
     # 使用项目的日志模块
     logger.info(f"准备启动医疗AI智能体API服务...")
@@ -80,19 +80,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--type",
         choices=["ollama", "vllm", "openai", "qwen"],
-        default="ollama",
+        default=None,
         help="选择智能体的后端类型 (默认: ollama)"
     )
     args = parser.parse_args()
 
     # 记录选择的智能体类型
-    logger.info(f"正在初始化 {args.type} 类型的医疗智能体...")
-
-    # 对于生成式智能体，额外记录初始化信息
-    if args.type == "generative":
-        logger.info("生成式智能体支持多种内容生成模式：general_info, detailed_explanation, patient_education, medical_case")
-
-    logger.info(f"{args.type} 医疗智能体初始化成功！")
+    logger.info(f"正在初始化医疗智能体...")
 
     # 启动服务，传递智能体类型参数
     start_api_server(

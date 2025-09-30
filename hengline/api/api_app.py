@@ -3,6 +3,8 @@ import sys
 from dotenv import load_dotenv
 
 from fastapi import FastAPI
+from hengline.config import config_reader
+
 
 # 加载.env文件中的环境变量
 dotenv_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), '../../.env')
@@ -16,6 +18,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'
 from hengline.logger import logger
 from hengline.api.medical_api import register_routes, startup
 
+# 存储从命令行传递的智能体类型
+global_agent_type = None
+
+
 # 创建FastAPI应用
 app = FastAPI(
     title="医疗AI智能体API",
@@ -26,15 +32,24 @@ app = FastAPI(
 # 启动时初始化
 @app.on_event("startup")
 def startup_event():
-    startup()
+    startup(global_agent_type)
 
 
 # 设置全局智能体类型的函数
 def set_global_agent_type(agent_type: str):
     """设置全局智能体类型"""
     global global_agent_type
-    global_agent_type = agent_type
-    logger.info(f"全局智能体类型已设置为: {agent_type}")
+
+    if agent_type and agent_type not in ["ollama", "vllm", "openai", "qwen"]:
+        raise ValueError(f"不支持的智能体类型: {agent_type}。支持的类型: ollama, vllm, openai, qwen")
+
+    if not agent_type:
+        global_agent_type = config_reader.get_all_config().get("default_llm", "ollama")
+        logger.warning(f"未指定智能体类型，将使用配置的默认值: {global_agent_type}")
+    else:
+        global_agent_type = agent_type
+        
+    logger.info(f"全局智能体类型已设置为: {global_agent_type}")
 
 
 # 注册路由

@@ -42,7 +42,7 @@ class MedicalAgentFactory:
         elif agent_type == "qwen":
             return QwenMedicalAgent(), QwenGenerativeAgent()
         else:
-            raise ValueError(f"不支持的智能体类型: {agent_type}。支持的类型: ollama, vllm, api/remote_api, generative")
+            raise ValueError(f"不支持的智能体类型: {agent_type}。支持的类型: api/openai, api/qwen")
 
 
 def main():

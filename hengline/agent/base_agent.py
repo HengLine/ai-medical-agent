@@ -22,7 +22,7 @@ from hengline.logger import logger
 
 # 导入工具和配置
 from hengline.tools.medical_tools import MedicalTools
-from hengline.config import ConfigReader
+from hengline.config import config_reader
 
 
 class MedicalAgentState:
@@ -36,10 +36,17 @@ class BaseMedicalAgent(ABC):
 
     def __init__(self):
         # 初始化配置读取器
-        self.config_reader = ConfigReader()
+        self.config_reader = config_reader
 
         # 初始化医疗工具
         self.medical_tools = MedicalTools()
+        
+        # 从配置中获取知识库参数
+        self.kb_config = self.config_reader.get_knowledge_base_config()
+        self.data_dir = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                self.kb_config.get("data_dir", "data")
+            )
 
         # 加载RAG数据
         self.vectorstore = self.load_medical_knowledge()
@@ -128,38 +135,54 @@ class BaseMedicalAgent(ABC):
             logger.error(f"初始化LangGraph智能体时出错: {str(e)}")
             return None
 
+
+    def check_knowledge_base(self):
+        """检查知识库是否存在"""
+        files = []
+
+        if not os.path.exists(self.data_dir):
+            logger.error(f"知识库目录不存在: {self.data_dir}")
+            return files
+
+        for root, _, filenames in os.walk(self.data_dir):
+            for filename in filenames:
+                if filename.endswith('.txt'):
+                    # 检查文件是否包含医疗相关关键词
+                    if not self.kb_config.get("medical_keywords") or any(keyword.lower() in filename.lower() for keyword in self.kb_config["medical_keywords"]):
+                        files.append(os.path.join(root, filename))
+        return files
+
+
+    def load_medical_documents(self):
+        """加载医疗知识库数据"""
+        # 获取data目录下的所有txt文件
+        files = self.check_knowledge_base()
+        logger.info(f"发现 {len(files)} 个医疗知识库文件")
+
+        if not files:
+            logger.warning("未找到医疗知识库文件。将创建一个空的向量存储。")
+            from langchain_core.documents import Document
+            # 创建空文档列表并使用from_documents方法初始化Chroma
+            empty_docs = [Document(page_content="这是一个空的医疗知识库文档", metadata={"source": "empty"})]
+            return Chroma.from_documents(empty_docs, FakeEmbeddings(size=768))
+
+        # 加载文档
+        documents = []
+        for file in files:
+            try:
+                loader = TextLoader(file, encoding="utf-8")
+                documents.extend(loader.load())
+            except Exception as e:
+                logger.error(f"加载文件 {file} 时出错: {str(e)}")
+
+        return documents
+
+
     def load_medical_knowledge(self):
         """加载医疗知识库数据"""
         try:
-            # 从配置中获取知识库参数
-            kb_config = self.config_reader.get_knowledge_base_config()
-            data_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), '../../', kb_config.get("data_dir", "data"))
-
-            # 获取data目录下的所有txt文件
-            files = []
-            if os.path.exists(data_dir):
-                for root, _, filenames in os.walk(data_dir):
-                    for filename in filenames:
-                        if filename.endswith('.txt'):
-                            # 检查文件是否包含医疗相关关键词
-                            if not kb_config.get("medical_keywords") or any(keyword.lower() in filename.lower() for keyword in kb_config["medical_keywords"]):
-                                files.append(os.path.join(root, filename))
-
-            if not files:
-                logger.warning("未找到医疗知识库文件。将创建一个空的向量存储。")
-                from langchain_core.documents import Document
-                # 创建空文档列表并使用from_documents方法初始化Chroma
-                empty_docs = [Document(page_content="这是一个空的医疗知识库文档", metadata={"source": "empty"})]
-                return Chroma.from_documents(empty_docs, FakeEmbeddings(size=768))
-
             # 加载文档
-            documents = []
-            for file in files:
-                try:
-                    loader = TextLoader(file, encoding="utf-8")
-                    documents.extend(loader.load())
-                except Exception as e:
-                    logger.error(f"加载文件 {file} 时出错: {str(e)}")
+            documents = self.load_medical_documents()
 
             if not documents:
                 logger.warning("未能加载任何文档。将创建一个空的向量存储。")

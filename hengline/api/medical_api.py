@@ -12,25 +12,22 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'
 from hengline.logger import logger
 
 # 导入配置读取器和智能体工厂
-from hengline.config import ConfigReader
+from hengline.config import config_reader
 from hengline.agent.medical_agent import MedicalAgentFactory
 from hengline.api.medical_model import QueryRequest, QueryResponse, LLMConfig, ConfigResponse, GenerationRequest, GenerationResponse
 
 # 初始化配置读取器和医疗智能体
-config_reader = ConfigReader()
 medical_agent = None
 generative_agent = None
-# 存储从命令行传递的智能体类型
-global_agent_type = None
 
 
-def startup():
+def startup(agent_type: str = None):
     """应用启动时初始化医疗智能体"""
     global medical_agent, generative_agent
     try:
         logger.info("正在初始化医疗智能体...")
         # 确定使用的智能体类型
-        agent_type = global_agent_type if global_agent_type else config_reader.get_all_config().get("default_llm", "ollama")
+        agent_type = agent_type if agent_type else config_reader.get_all_config().get("default_llm", "ollama")
         logger.info(f"使用 {agent_type} 类型的智能体")
         # 使用工厂创建相应类型的智能体
         medical_agent, generative_agent = MedicalAgentFactory.create_agent(agent_type)
@@ -93,9 +90,6 @@ def register_routes(app: FastAPI):
             # 写入配置文件
             with open(config_reader.config_path, 'w', encoding='utf-8') as f:
                 json.dump(all_config, f, ensure_ascii=False, indent=4)
-
-            # 重新初始化配置读取器
-            config_reader = ConfigReader()
 
             # 重新初始化医疗智能体
             try:

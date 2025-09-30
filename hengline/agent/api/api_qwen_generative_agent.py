@@ -13,18 +13,18 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../.
 from hengline.logger import logger
 
 # 从基类导入
-from hengline.agent.base_agent import BaseMedicalAgent
+from hengline.agent.api.api_qwen_base_agent import QwenBaseAgent
 
-# 导入Qwen特定的库
-from langchain_community.chat_models import ChatTongyi
+# 导入LangChain相关库
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 
-class QwenGenerativeAgent(BaseMedicalAgent):
+class QwenGenerativeAgent(QwenBaseAgent):
     """基于通义千问API的生成式医疗智能体"""
 
     def __init__(self):
+        # 调用基类初始化
         super().__init__()
 
         # 创建生成链
@@ -34,74 +34,6 @@ class QwenGenerativeAgent(BaseMedicalAgent):
         self.supported_generation_types = ["general_info", "detailed_explanation", "patient_education", "medical_case"]
 
         logger.info("通义千问生成式智能体初始化完成")
-
-    def _initialize_llm(self):
-        """初始化通义千问语言模型"""
-        try:
-            # 从配置中获取Qwen模型参数
-            model_name = self.config_reader.get_llm_value("qwen", "model", "qwen-plus")
-            api_url = self.config_reader.get_llm_value("qwen", "api_url", "https://dashscope.aliyuncs.com/compatible-mode/v1")
-            temperature = self.config_reader.get_llm_value("qwen", "temperature", 0.1)
-            max_tokens = self.config_reader.get_llm_value("qwen", "max_tokens", 2048)
-
-            # 获取API密钥
-            api_key = self.config_reader.get_qwen_api_key()
-
-            # 初始化通义千问模型
-            llm = ChatTongyi(
-                model=model_name,
-                dashscope_api_key=api_key,
-                streaming=True,
-                max_retries=3,
-                model_kwargs={
-                    "base_url": api_url,
-                    "temperature": temperature,
-                    "max_tokens": max_tokens
-                },
-            )
-
-            # 检查模型是否支持工具调用
-            self.model_supports_tools = hasattr(self, '_check_tool_support') and self._check_tool_support(model_name) or True
-            logger.info(f"成功初始化通义千问模型: {model_name}, 支持工具调用: {self.model_supports_tools}")
-            return llm
-        except Exception as e:
-            logger.error(f"初始化通义千问语言模型时出错: {str(e)}")
-            # 确保model_supports_tools有默认值
-            self.model_supports_tools = False
-            # 返回None，基类会处理这种情况
-            return None
-
-    def _check_tool_support(self, model_name):
-        """检查模型是否支持工具调用
-        
-        Args:
-            model_name: 模型名称
-        
-        Returns:
-            bool: 是否支持工具调用
-        """
-        # 支持工具调用的Qwen模型列表
-        tool_supported_models = [
-            "qwen-plus",
-            "qwen-max",
-            "qwen-max-longcontext",
-            "qwen-72b-chat",
-            "qwen-14b-chat"
-        ]
-
-        # 检查模型名称是否为None或空
-        if model_name is None or not model_name:
-            logger.warning("模型名称为空，默认为不支持工具调用")
-            return False
-
-        # 检查模型名称是否在支持列表中
-        model_name_lower = model_name.lower()
-        for supported_model in tool_supported_models:
-            if supported_model.lower() in model_name_lower:
-                return True
-
-        logger.warning(f"模型 {model_name} 可能不支持完整的工具调用功能")
-        return False
 
     def _create_generative_chains(self):
         """创建不同类型的生成链"""

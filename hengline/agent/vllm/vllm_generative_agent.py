@@ -13,56 +13,27 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../.
 from hengline.logger import logger
 
 # 从基类导入
-from hengline.agent.base_agent import BaseMedicalAgent
+from hengline.agent.vllm.vllm_base_agent import VLLMBaseAgent
 
 # 导入LangChain相关库
-from langchain_community.llms.vllm import VLLM
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 
-class VllmGenerativeAgent(BaseMedicalAgent):
+class VllmGenerativeAgent(VLLMBaseAgent):
     """基于vLLM的生成式医疗智能体"""
 
     def __init__(self):
+        # 调用基类初始化
         super().__init__()
 
         # 初始化生成链字典
         self.generative_chains = {}
 
-        # 初始化日志
-        self.logger = logger
-
         # 创建生成链
         self._create_generative_chains()
 
         logger.info("vLLM生成式医疗智能体初始化完成")
-
-    def _initialize_llm(self):
-        """初始化vLLM语言模型"""
-        try:
-            # 从配置中获取vLLM模型参数
-            llm_config = self.config_reader.config.get("llm", {})
-            vllm_config = llm_config.get("vllm", {})
-
-            # 获取vLLM服务URL和模型名称
-            model_name = vllm_config.get("model", "")
-
-            # 初始化vLLM模型
-            llm = VLLM(
-                model=model_name,
-                temperature=vllm_config.get("temperature", 0.1),
-                max_new_tokens=vllm_config.get("max_tokens", 1024),
-                top_p=vllm_config.get("top_p", 0.95),
-                **vllm_config.get("vllm_kwargs", {})
-            )
-
-            logger.info(f"成功初始化vLLM模型: {model_name}")
-            return llm
-        except Exception as e:
-            logger.error(f"初始化vLLM语言模型时出错: {str(e)}")
-            # 返回None，基类会处理这种情况
-            return None
 
     def _create_generative_chains(self):
         """创建各种生成类型的链"""

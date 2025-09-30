@@ -191,21 +191,7 @@ class ConfigReader:
         llm_config = self.get_llm_config(llm_type)
         return llm_config.get("embeddings", {})
 
-    def get_generative_config(self) -> Dict[str, Any]:
-        """
-        获取生成式智能体配置
-        :return: 生成式智能体配置字典
-        """
-        # 默认使用Ollama配置，但允许在llm中单独配置generative
-        generative_config = self.get_llm_config("generative")
-        if not generative_config:
-            # 如果没有单独配置generative，则使用Ollama配置的副本
-            ollama_config = self.get_ollama_config()
-            # 调整温度参数以适合生成式任务
-            generative_config = ollama_config.copy()
-            generative_config["temperature"] = generative_config.get("temperature", 0.7)
-            generative_config["max_tokens"] = generative_config.get("max_tokens", 2048)
-        return generative_config
+
     
     def get_openai_api_key(self, default: str = "") -> str:
         """
@@ -245,18 +231,5 @@ class ConfigReader:
         # 3. 如果JSON配置中没有值或为空，从环境变量DASHSCOPE_API_KEY获取
         return os.environ.get("DASHSCOPE_API_KEY", default)
     
-    def get_api_key_for_llm(self, llm_type: str, default: str = "") -> str:
-        """
-        根据LLM类型获取对应的API密钥
-        
-        :param llm_type: LLM类型（'openai', 'qwen'等）
-        :param default: 默认值
-        :return: API密钥
-        """
-        if llm_type == "openai":
-            return self.get_openai_api_key(default)
-        elif llm_type == "qwen":
-            return self.get_qwen_api_key(default)
-        else:
-            # 其他LLM类型可能不需要API密钥
-            return default
+
+config_reader = ConfigReader()

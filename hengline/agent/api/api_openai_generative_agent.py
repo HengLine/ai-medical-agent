@@ -13,18 +13,18 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../.
 from hengline.logger import logger
 
 # 从基类导入
-from hengline.agent.base_agent import BaseMedicalAgent
+from hengline.agent.api.api_openai_base_agent import OpenAIBaseAgent
 
-# 导入OpenAI特定的库
-from langchain_openai import ChatOpenAI
+# 导入LangChain相关库
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 
-class OpenAIGenerativeAgent(BaseMedicalAgent):
+class OpenAIGenerativeAgent(OpenAIBaseAgent):
     """基于OpenAI API的生成式医疗智能体"""
 
     def __init__(self):
+        # 调用基类初始化
         super().__init__()
         
         # 创建生成链
@@ -34,44 +34,6 @@ class OpenAIGenerativeAgent(BaseMedicalAgent):
         self.supported_generation_types = ["general_info", "detailed_explanation", "patient_education", "medical_case"]
         
         logger.info("OpenAI生成式智能体初始化完成")
-        
-    def _initialize_llm(self):
-        """初始化OpenAI语言模型"""
-        try:
-            # 从配置中获取OpenAI模型参数
-            llm_config = self.config_reader.config.get("llm", {})
-            openai_config = llm_config.get("openai", {})
-            
-            # 获取API密钥和模型名称
-            api_key = openai_config.get("api_key", "")
-            api_url = openai_config.get("api_url", "https://api.openai.com/v1")
-            model_name = openai_config.get("model", "gpt-4o")
-            
-            if not api_key:
-                logger.warning("未配置OpenAI API密钥，尝试从环境变量获取")
-                import os
-                api_key = os.environ.get("OPENAI_API_KEY", "")
-                
-                if not api_key:
-                    logger.warning("未找到OpenAI API密钥，将使用空密钥继续")
-            
-            # 初始化OpenAI模型
-            llm = ChatOpenAI(
-                api_key=api_key,
-                base_url=api_url,
-                model=model_name,
-                streaming=openai_config.get("streaming", True),
-                temperature=openai_config.get("temperature", 0.1),
-                max_tokens=openai_config.get("max_tokens", 2048)
-            )
-            
-            self.model_supports_tools = True
-            logger.info(f"成功初始化OpenAI模型: {model_name}")
-            return llm
-        except Exception as e:
-            logger.error(f"初始化OpenAI语言模型时出错: {str(e)}")
-            # 返回None，基类会处理这种情况
-            return None
         
     def _create_generative_chains(self):
         """创建不同类型的生成链"""

@@ -1,81 +1,145 @@
 # 医疗AI智能体
 
-一个基于LangChain和LangGraph的医疗智能体系统，支持四种不同的后端实现方式：本地Ollama、本地VLLM、远程API调用和生成式智能体。
+<div align="center">
+  <img src="https://img.shields.io/badge/python-3.8+-blue.svg" alt="Python Version">
+  <img src="https://img.shields.io/badge/LangChain-0.2+-green.svg" alt="LangChain Version">
+  <img src="https://img.shields.io/badge/FastAPI-0.100+-red.svg" alt="FastAPI Version">
+  <img src="https://img.shields.io/badge/LangGraph-0.1+-purple.svg" alt="LangGraph Version">
+  <img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="License">
+</div>
 
-## 功能特性
+## 📋 项目简介
 
-- 支持四种不同的后端实现：
-  - 本地Ollama模型
-  - 本地VLLM模型
-  - 远程API（如OpenAI API）
+一个基于LangChain和LangGraph构建的医疗智能体系统，提供灵活的多后端实现方案，包括本地Ollama、本地VLLM、远程API（如OpenAI、通义千问）和生成式智能体。系统集成了医疗知识库检索、症状提取、严重程度评估等功能，通过统一的RESTful API接口提供服务。
+
+## ✨ 功能特性
+
+- **多后端支持**
+  - 本地Ollama模型（适合个人电脑运行）
+  - 本地VLLM模型（支持高性能部署）
+  - 远程API调用（OpenAI、通义千问等）
   - 生成式智能体（支持多种内容生成模式）
-- 基于LangGraph的智能体架构，支持工具调用
-- 医疗知识库检索功能
-- 症状提取和严重程度评估
-- 网络搜索功能（获取最新医疗信息）
-- 统一的配置管理
-- RESTful API接口，支持健康检查、配置管理、问题查询等功能
-- 交互式命令行界面
-- 多种医疗内容生成模式（general_info, detailed_explanation, patient_education, medical_case）
 
-## 目录结构
+- **智能体能力**
+  - 基于LangGraph的智能体架构，支持工具调用
+  - 医疗知识库检索与知识问答
+  - 症状提取和严重程度评估
+  - 网络搜索功能（获取最新医疗信息）
+
+- **系统功能**
+  - 统一的配置管理系统
+  - 完整的RESTful API接口
+  - 交互式命令行界面
+  - 多种医疗内容生成模式
+    - general_info：基础医疗知识
+    - detailed_explanation：专业医学解释
+    - patient_education：患者教育内容
+    - medical_case：医疗案例分析
+
+## 📁 目录结构
 
 ```
-├── .gitignore
-├── README.md           # 项目说明文档
-├── config/             # 配置文件目录
-│   └── config.json     # 主配置文件
-├── data/               # 知识库数据目录
-├── hengline/           # 核心代码目录
-│   ├── agent/          # 智能体相关代码
-│   │   ├── api/        # 远程API智能体实现
-│   │   ├── generative/ # 生成式智能体实现
-│   │   ├── ollama/     # Ollama智能体实现
-│   │   ├── vllm/       # VLLM智能体实现
+├── .gitignore            # Git忽略文件配置
+├── .env.example          # 环境变量示例文件
+├── README.md             # 项目说明文档
+├── config/               # 配置文件目录
+│   └── config.json       # 主配置文件
+├── data/                 # 知识库数据目录
+├── hengline/             # 核心代码目录
+│   ├── agent/            # 智能体相关代码
+│   │   ├── api/          # 远程API智能体实现 (OpenAI、通义千问)
+│   │   ├── ollama/       # Ollama智能体实现
+│   │   ├── vllm/         # VLLM智能体实现
 │   │   ├── base_agent.py # 智能体基类
-│   │   └── medical_agent.py # 统一入口文件
-│   ├── api/            # API相关代码
-│   │   └── medical_api.py # API入口文件
-│   ├── api_app.py      # FastAPI应用入口
-│   ├── config.py       # 配置读取器
-│   ├── demo/           # 演示脚本
-│   │   ├── demo_usage.py # 基本使用演示
-│   │   ├── generative_demo.py # 生成式智能体演示
-│   │   └── simple_medical_agent.py # 简单医疗智能体演示
-│   ├── logger.py       # 日志模块
-│   └── tools/          # 医疗相关工具
-├── requirements.txt    # 项目依赖
-├── run_medical.py      # API服务启动脚本
-└── utils/              # 工具函数
-    └── console_colors.py # 控制台颜色工具
+│   │   └── medical_agent.py # 智能体统一入口
+│   ├── api/              # API接口实现
+│   │   ├── api_app.py    # FastAPI应用入口
+│   │   ├── medical_api.py # 医疗API接口
+│   │   └── medical_model.py # API数据模型
+│   ├── config.py         # 配置读取器
+│   ├── demo/             # 演示脚本
+│   ├── logger.py         # 日志模块
+│   └── tools/            # 医疗相关工具
+├── requirements.txt      # 项目依赖清单
+├── run_medical.py        # API服务启动脚本
+└── utils/                # 工具函数
 ```
 
-## 安装指南
+## 🚀 安装指南
 
-1. 克隆项目代码
+### 1. 克隆项目代码
 
-2. 安装依赖：
 ```bash
-pip install -r requirements.txt
+git clone https://github.com/yourusername/ai-medical-agent.git
+cd ai-medical-agent
 ```
 
-3. 配置环境：
-   - 根据需要修改 `config/config.json` 文件中的配置项
-   - 对于Ollama智能体，需要先安装并启动Ollama服务
-   - 对于VLLM智能体，需要准备好本地模型文件
-   - 对于远程API智能体，需要配置API密钥
-   - 医疗知识库文件应放置在 `data/` 目录下
+### 2. 安装依赖
 
-4. 确保知识库目录存在：
+```bash
+# 使用pip安装项目依赖
+pip install -r requirements.txt
+
+# 对于开发环境，建议创建虚拟环境
+python -m venv venv
+# Windows激活虚拟环境
+source venv/Scripts/activate
+# Linux/Mac激活虚拟环境
+source venv/bin/activate
+```
+
+### 3. 配置环境
+
+#### 3.1 环境变量配置
+
+复制示例环境文件并根据需要修改：
+
+```bash
+cp .env.example .env
+```
+
+在 `.env` 文件中设置必要的环境变量：
+
+```env
+# API密钥（如使用远程API智能体）
+OPENAI_API_KEY=your_openai_api_key
+TONGYI_API_KEY=your_tongyi_api_key
+
+# 其他环境变量
+```
+
+#### 3.2 配置文件修改
+
+根据需要修改 `config/config.json` 文件中的配置项，包括：
+
+- 默认LLM设置
+- 各模型的配置参数
+- 知识库配置
+- 检索链配置
+
+#### 3.3 后端环境准备
+
+- **Ollama智能体**：需要先安装并启动Ollama服务
+- **VLLM智能体**：需要准备好本地模型文件并配置路径
+- **远程API智能体**：需要配置有效的API密钥
+
+### 4. 准备知识库
+
+确保知识库目录存在并添加医疗知识文档：
+
 ```bash
 mkdir -p data
+# 添加示例知识文档
+echo "高血压是一种常见的慢性疾病..." > data/hypertension_knowledge.txt
 ```
 
-## 使用方法
+## 🖥️ 使用方法
 
-### 统一入口使用
+### 1. 命令行交互模式
 
-通过统一入口文件，可以选择使用哪种类型的智能体：
+#### 1.1 通过统一入口使用
+
+通过统一入口文件，可以方便地选择使用哪种类型的智能体：
 
 ```bash
 # 使用Ollama智能体（默认）
@@ -84,14 +148,14 @@ python hengline/agent/medical_agent.py
 # 使用VLLM智能体
 python hengline/agent/medical_agent.py --type vllm
 
-# 使用远程API智能体
-python hengline/agent/medical_agent.py --type api
+# 使用OpenAI API智能体
+python hengline/agent/medical_agent.py --type openai
 
-# 使用生成式智能体
-python hengline/agent/medical_agent.py --type generative
+# 使用通义千问API智能体
+python hengline/agent/medical_agent.py --type qwen
 ```
 
-### 单独使用各智能体
+#### 1.2 单独使用各智能体
 
 也可以直接运行各智能体的实现文件：
 
@@ -102,14 +166,14 @@ python hengline/agent/ollama/ollama_medical_agent.py
 # 运行VLLM智能体
 python hengline/agent/vllm/vllm_medical_agent.py
 
-# 运行远程API智能体
-python hengline/agent/api/remote_api_agent.py
+# 运行OpenAI API智能体
+python hengline/agent/api/api_openai_medical_agent.py
 
-# 运行生成式智能体
-python hengline/agent/generative/generative_medical_agent.py
+# 运行通义千问API智能体
+python hengline/agent/api/api_qwen_medical_agent.py
 ```
 
-### 启动API服务
+### 2. 启动API服务
 
 ```bash
 # 启动默认Ollama类型的API服务
@@ -118,7 +182,8 @@ python run_medical.py
 # 指定智能体类型启动API服务
 python run_medical.py --type ollama
 python run_medical.py --type vllm
-python run_medical.py --type api
+python run_medical.py --type openai
+python run_medical.py --type qwen
 
 # 自定义主机和端口
 python run_medical.py --host 0.0.0.0 --port 8080
@@ -129,81 +194,109 @@ python run_medical.py --reload
 
 API文档地址：http://localhost:8000/docs
 
-可用的API端点：
-- GET /api/health - 健康检查（检查API和智能体的运行状态）
-- PUT /api/config - 更新LLM配置（修改当前使用的LLM参数）
-- POST /api/query - 查询医疗智能体（向医疗智能体发送问题并获取回答）
-- POST /api/generate - 生成医疗内容（生成指定主题的医疗内容）
+### 2.1 API端点说明
 
-## 配置说明
+| 方法 | 端点 | 描述 |
+|------|------|------|
+| GET | /api/health | 健康检查（检查API和智能体的运行状态） |
+| PUT | /api/config | 更新LLM配置（修改当前使用的LLM参数） |
+| POST | /api/query | 查询医疗智能体（向医疗智能体发送问题并获取回答） |
+| POST | /api/generate | 生成医疗内容（生成指定主题的医疗内容） |
 
-配置文件位于 `config/config.json`，主要包含以下配置项：
+## ⚙️ 配置说明
 
-### 默认LLM设置
+配置文件位于 `config/config.json`，采用JSON格式，主要包含以下配置项：
+
+### 1. 默认LLM设置
+
 ```json
-"default_llm": "ollama"  # 默认使用的LLM类型，可以是 ollama, vllm, api
+"default_llm": "ollama"  // 默认使用的LLM类型，可以是 ollama, vllm, openai, qwen
 ```
 
-### LLM配置（所有类型统一组织在llm对象下）
+### 2. LLM配置
+
+所有模型类型的配置统一组织在`llm`对象下：
+
+#### 2.1 Ollama配置
+
 ```json
-"llm": {
-    "ollama": {
-        "model_name": "llama3.2",       # Ollama模型名称
-        "base_url": "http://localhost:11434",  # Ollama服务地址
-        "timeout": 300,                 # 超时时间
-        "temperature": 0.1,             # 生成温度
-        "keep_alive": 300,              # 保持连接时间
-        "top_p": 0.95,                  # 采样参数
-        "max_tokens": 1024              # 最大生成令牌数
+"ollama": {
+    "model_name": "llama3.2",       // Ollama模型名称
+    "base_url": "http://localhost:11434",  // Ollama服务地址
+    "timeout": 300,                 // 超时时间
+    "temperature": 0.1,             // 生成温度
+    "keep_alive": 300,              // 保持连接时间
+    "top_p": 0.95,                  // 采样参数
+    "max_tokens": 1024              // 最大生成令牌数
+}
+```
+
+#### 2.2 VLLM配置
+
+```json
+"vllm": {
+    "model": "E:\\AI\\models\\vllm\\gpt2",  // 本地模型路径
+    "temperature": 0.1,             // 生成温度
+    "max_tokens": 1024,             // 最大生成令牌数
+    "top_p": 0.95,                  // 采样参数
+    "vllm_kwargs": {
+        "device": "cpu",           // 运行设备
+        "max_model_len": 4096,      // 最大模型长度
+        "trust_remote_code": true,  // 信任远程代码
+        "dtype": "auto",           // 数据类型
+        "disable_log_requests": true,  // 禁用请求日志
+        "disable_log_stats": false  // 启用统计日志
     },
-    "vllm": {
-        "model": "E:\\AI\\models\\vllm\\gpt2",  # 本地模型路径
-        "temperature": 0.1,             # 生成温度
-        "max_tokens": 1024,             # 最大生成令牌数
-        "top_p": 0.95,                  # 采样参数
-        "vllm_kwargs": {
-            "device": "cpu",           # 运行设备
-            "max_model_len": 4096,      # 最大模型长度
-            "trust_remote_code": true,  # 信任远程代码
-            "dtype": "auto",           # 数据类型
-            "disable_log_requests": true,  # 禁用请求日志
-            "disable_log_stats": false  # 启用统计日志
+    "embeddings": {
+        "model_name": "E:\\AI\\models\\vllm\\bge-small-zh",  // 嵌入模型路径
+        "model_kwargs": {
+            "device": "cpu"
         },
-        "embeddings": {
-            "model_name": "E:\\AI\\models\\vllm\\bge-small-zh",  # 嵌入模型路径
-            "model_kwargs": {
-                "device": "cpu"
-            },
-            "encode_kwargs": {
-                "normalize_embeddings": true
-            }
+        "encode_kwargs": {
+            "normalize_embeddings": true
         }
-    },
-    "api": {
-        "api_key": "",                  # API密钥
-        "api_url": "https://api.openai.com/v1",  # API地址
-        "model": "gpt-4o",             # 模型名称
-        "temperature": 0.1,             # 生成温度
-        "max_tokens": 2048              # 最大生成令牌数
     }
 }
+```
 
-### 共享配置
+#### 2.3 OpenAI API配置
+
 ```json
-"retrieval": {                      # 检索链配置
-    "chain_type": "stuff",         # 链类型
-    "search_kwargs": {              # 搜索参数
-        "k": 3                      # 检索文档数量
+"openai": {
+    "api_key": "",                  // OpenAI API密钥
+    "api_url": "https://api.openai.com/v1",  // OpenAI API地址
+    "model": "gpt-4o",             // 模型名称
+    "temperature": 0.1,             // 生成温度
+    "max_tokens": 2048              // 最大生成令牌数
+}
+```
+
+#### 2.4 通义千问API配置
+
+```json
+"qwen": {
+    "api_key": "",                  // 通义千问API密钥
+    "model": "qwen-plus",          // 模型名称
+    "temperature": 0.1,             // 生成温度
+    "max_tokens": 2048              // 最大生成令牌数
+}
+
+### 3. 共享配置
+```json
+"retrieval": {
+    "chain_type": "stuff",         // 链类型
+    "search_kwargs": {
+        "k": 3                      // 检索文档数量
     },
-    "return_source_documents": true # 是否返回源文档
+    "return_source_documents": true // 是否返回源文档
 },
-"text_splitter": {                  # 文本分割配置
-    "chunk_size": 1000,             # 块大小
-    "chunk_overlap": 200            # 重叠部分
+"text_splitter": {
+    "chunk_size": 1000,             // 块大小
+    "chunk_overlap": 200            // 重叠部分
 },
-"knowledge_base": {                 # 知识库配置
-    "data_dir": "data",            # 数据目录
-    "medical_keywords": [           # 医疗相关关键词
+"knowledge_base": {
+    "data_dir": "data",            // 数据目录
+    "medical_keywords": [           // 医疗相关关键词
       "medical",
       "health",
       "disease",
@@ -212,34 +305,12 @@ API文档地址：http://localhost:8000/docs
       "symptoms"
     ]
 },
-"example_questions": [              # 示例问题列表
+"example_questions": [              // 示例问题列表
     "什么是高血压？如何预防？",
     "老年高血压患者有哪些注意事项？",
     "脑血栓的高危因素有哪些？如何预防？",
     "糖尿病的预防措施有哪些？",
     "老年人如何保持健康的生活方式？"
-]
-```
-
-### 共享配置
-```json
-"retrieval": {                      # 检索链配置
-    "chain_type": "stuff",         # 链类型
-    "search_kwargs": {              # 搜索参数
-        "k": 3                      # 检索文档数量
-    },
-    "return_source_documents": true # 是否返回源文档
-},
-"text_splitter": {                  # 文本分割配置
-    "chunk_size": 1000,             # 块大小
-    "chunk_overlap": 200            # 重叠部分
-},
-"knowledge_base": {                 # 知识库配置
-    "data_dir": "data",            # 数据目录
-    "medical_keywords": [...]       # 医疗相关关键词
-},
-"example_questions": [              # 示例问题列表
-    ...
 ]
 ```
 

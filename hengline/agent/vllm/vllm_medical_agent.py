@@ -1,78 +1,25 @@
 import os
 import sys
-import logging
+import os
 from typing import Dict, Any
 
 # 添加项目根目录到Python路径
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
 
-# 从基类导入
-from hengline.agent.base_agent import BaseMedicalAgent
-
-# 导入VLLM特定的库
-from langchain_community.llms.vllm import VLLM
-from langchain_community.embeddings import HuggingFaceEmbeddings
+# 导入基类
+from hengline.agent.vllm.vllm_base_agent import VLLMBaseAgent
 from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from hengline.logger import warning, info, error
 
 
-class VLLMMedicalAgent(BaseMedicalAgent):
+class VLLMMedicalAgent(VLLMBaseAgent):
     """基于VLLM本地模型的医疗智能体"""
     
     def __init__(self):
-        # 设置日志
-        self._setup_logging()
-        
-        # 初始化缓存
-        self.cache = {}
-        
         # 调用基类初始化
         super().__init__()
-    
-    def _setup_logging(self):
-        """设置日志系统"""
-        try:
-            # 配置日志
-            logging.basicConfig(
-                level=logging.INFO,
-                format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-            )
-        except Exception as e:
-            print(f"设置日志时出错: {str(e)}")
-    
-    def _initialize_llm(self):
-        """初始化VLLM语言模型"""
-        try:
-            # 从配置中获取VLLM模型参数
-            vllm_config = self.config_reader.get_vllm_config()
-            
-            if not vllm_config:
-                raise ValueError("未找到VLLM配置")
-            
-            # 初始化VLLM模型
-            llm = VLLM(
-                model=vllm_config.get("model", "gpt2"),  # 默认模型
-                temperature=vllm_config.get("temperature", 0.1),
-                max_new_tokens=vllm_config.get("max_tokens", 1024),
-                top_p=vllm_config.get("top_p", 0.95),
-                vllm_kwargs=vllm_config.get("vllm_kwargs", {})
-            )
-            
-            logging.info(f"VLLM模型初始化成功: {vllm_config.get('model', 'gpt2')}")
-            return llm
-        except Exception as e:
-            logging.error(f"VLLM模型初始化失败: {str(e)}")
-            
-            # 提供一个简单的回退实现
-            try:
-                from langchain_community.llms import FakeListLLM
-                fallback_llm = FakeListLLM(
-                    responses=["抱歉，VLLM模型加载失败，无法提供回答。请检查VLLM服务配置。"]
-                )
-                return fallback_llm
-            except Exception:
-                # 如果回退也失败，返回None
-                print(f"初始化回退模型也失败: {str(e)}")
-                return None
+        return None
     
     def load_medical_knowledge(self):
         """加载医疗知识库数据，VLLM版本使用FAISS进行优化"""
@@ -93,7 +40,7 @@ class VLLMMedicalAgent(BaseMedicalAgent):
                     encode_kwargs=embeddings_config.get("encode_kwargs", {"normalize_embeddings": True})
                 )
             except Exception as e:
-                logging.warning(f"初始化HuggingFaceEmbeddings失败，将使用FakeEmbeddings: {str(e)}")
+                warning(f"初始化HuggingFaceEmbeddings失败，将使用FakeEmbeddings: {str(e)}")
                 # 如果失败，回退到FakeEmbeddings
                 from langchain_community.embeddings import FakeEmbeddings
                 embeddings = FakeEmbeddings(size=768)
@@ -109,7 +56,7 @@ class VLLMMedicalAgent(BaseMedicalAgent):
                                 files.append(os.path.join(root, filename))
             
             if not files:
-                logging.warning("未找到医疗知识库文件。将创建一个空的向量存储。")
+                warning("未找到医疗知识库文件。将创建一个空的向量存储。")
                 from langchain_core.documents import Document
                 # 创建空文档列表并使用from_documents方法初始化FAISS
                 empty_docs = [Document(page_content="这是一个空的医疗知识库文档", metadata={"source": "empty"})]
@@ -123,10 +70,10 @@ class VLLMMedicalAgent(BaseMedicalAgent):
                     loader = TextLoader(file, encoding="utf-8")
                     documents.extend(loader.load())
                 except Exception as e:
-                    logging.error(f"加载文件 {file} 时出错: {str(e)}")
+                    error(f"加载文件 {file} 时出错: {str(e)}")
             
             if not documents:
-                logging.warning("未能加载任何文档。将创建一个空的向量存储。")
+                warning("未能加载任何文档。将创建一个空的向量存储。")
                 from langchain_core.documents import Document
                 empty_docs = [Document(page_content="这是一个空的医疗知识库文档", metadata={"source": "empty"})]
                 return FAISS.from_documents(empty_docs, embeddings)
@@ -144,10 +91,10 @@ class VLLMMedicalAgent(BaseMedicalAgent):
             
             # 创建向量存储 - 使用FAISS进行优化
             vectorstore = FAISS.from_documents(texts, embeddings)
-            logging.info(f"成功创建FAISS向量存储，包含{len(texts)}个文档块")
+            info(f"成功创建FAISS向量存储，包含{len(texts)}个文档块")
             return vectorstore
         except Exception as e:
-            logging.error(f"加载医疗知识库时出错: {str(e)}")
+            error(f"加载医疗知识库时出错: {str(e)}")
             # 回退到基类的实现
             return super().load_medical_knowledge()
     
@@ -156,9 +103,8 @@ class VLLMMedicalAgent(BaseMedicalAgent):
         try:
             # 检查是否已经初始化了llm和vectorstore
             if not self.llm or not self.vectorstore:
-                logging.warning("LLM或VectorStore未初始化，无法创建检索链")
-                return None
-            
+                warning("LLM或VectorStore未初始化，无法创建检索链")
+        
             # 从配置中获取检索链参数
             retrieval_config = self.config_reader.get_module_config("retrieval")
             
@@ -172,10 +118,10 @@ class VLLMMedicalAgent(BaseMedicalAgent):
                 return_source_documents=retrieval_config.get("return_source_documents", True)
             )
             
-            logging.info("VLLM检索链创建成功")
+            info("VLLM检索链创建成功")
             return retrieval_chain
         except Exception as e:
-            logging.error(f"创建检索链时出错: {str(e)}")
+            error(f"创建检索链时出错: {str(e)}")
             # 回退到基类的实现
             return super()._create_retrieval_chain()
     
@@ -184,7 +130,7 @@ class VLLMMedicalAgent(BaseMedicalAgent):
         # 检查缓存
         cache_key = question.strip().lower()
         if cache_key in self.cache:
-            logging.debug(f"从缓存中获取问题答案: {cache_key}")
+            debug(f"从缓存中获取问题答案: {cache_key}")
             return self.cache[cache_key]
         
         # 调用基类的run方法

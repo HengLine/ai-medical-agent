@@ -8,18 +8,18 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../.
 from hengline.logger import logger
 
 # 从基类导入
-from hengline.agent.base_agent import BaseMedicalAgent
+from hengline.agent.ollama.ollama_base_agent import OllamaBaseAgent
 
 # 导入LangChain相关库
-from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 
-class OllamaGenerativeAgent(BaseMedicalAgent):
+class OllamaGenerativeAgent(OllamaBaseAgent):
     """基于生成式AI的医疗智能体，专注于生成丰富、自然的医疗内容"""
     
     def __init__(self):
+        # 调用基类初始化
         super().__init__()
         
         # 初始化生成式提示模板
@@ -75,51 +75,6 @@ class OllamaGenerativeAgent(BaseMedicalAgent):
         self.generative_chains = self._create_generative_chains()
         
         logger.info("生成式医疗智能体初始化完成")
-    
-    def _initialize_llm(self):
-        """初始化生成式语言模型"""
-        try:
-            # 从配置中获取生成式模型参数
-            generative_config = self.config_reader.get_generative_config()
-            
-            # 尝试使用配置的生成式模型
-            try:
-                llm = ChatOllama(
-                    model=generative_config.get("model_name", "llama3.2"),
-                    temperature=generative_config.get("temperature", 0.7),  # 生成式任务使用较高的temperature
-                    base_url=generative_config.get("base_url", "http://localhost:11434"),
-                    keep_alive=generative_config.get("keep_alive", 300),
-                    top_p=generative_config.get("top_p", 0.95),
-                    max_tokens=generative_config.get("max_tokens", 2048)  # 生成式任务需要更多token
-                )
-                logger.info(f"成功初始化生成式模型: {generative_config.get('model_name', 'llama3.2')}")
-                return llm
-            except Exception as e:
-                # 如果首选模型不可用，尝试使用备选模型
-                logger.warning(f"尝试使用首选模型失败: {str(e)}")
-                
-                # 备选模型列表
-                fallback_models = ["qwen3", "mistral", "llama2"]
-                
-                for fallback_model in fallback_models:
-                    try:
-                        llm = ChatOllama(
-                            model=fallback_model,
-                            temperature=generative_config.get("temperature", 0.7),
-                            base_url=generative_config.get("base_url", "http://localhost:11434"),
-                            keep_alive=generative_config.get("keep_alive", 300)
-                        )
-                        logger.info(f"已切换到备选生成式模型: {fallback_model}")
-                        return llm
-                    except Exception:
-                        continue
-                
-                # 如果所有备选模型都不可用，抛出异常
-                raise Exception("无法初始化生成式模型，请检查Ollama服务是否正常运行")
-        except Exception as e:
-            logger.error(f"初始化生成式语言模型时出错: {str(e)}")
-            # 返回None，基类会处理这种情况
-            return None
     
     def _create_generative_chains(self):
         """创建各种生成式任务的链"""
