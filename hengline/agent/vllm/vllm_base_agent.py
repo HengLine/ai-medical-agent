@@ -7,6 +7,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../.
 
 # 导入日志模块
 from hengline.logger import logger
+from utils.log_utils import print_log_exception
+
 
 # 从基类导入
 from hengline.agent.base_agent import BaseMedicalAgent
@@ -175,11 +177,16 @@ class VLLMBaseAgent(BaseMedicalAgent):
             persist_dir = self.config_reader.get_persist_directory(agent_type)
             
             # 创建向量存储
-            vectorstore = Chroma.from_documents(
-                documents=splits,
-                embedding=embedding_model,
-                persist_directory=persist_dir
-            )
+            try:
+                vectorstore = Chroma.from_documents(
+                    documents=splits,
+                    embedding=embedding_model,
+                    persist_directory=persist_dir
+                )
+            except ValueError as e:
+                print_log_exception()
+                # 回退到基类的实现
+                return super().load_medical_knowledge(agent_type)
             
             logger.info(f"成功加载医疗知识库，共 {len(splits)} 个文档片段")
             return vectorstore

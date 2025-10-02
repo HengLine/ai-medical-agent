@@ -162,12 +162,17 @@ class QwenBaseAgent(BaseMedicalAgent):
             
             # 创建向量存储
             if persist_dir:
-                vectorstore = Chroma.from_documents(
-                    texts, 
-                    embeddings, 
-                    persist_directory=persist_dir
-                )
-                logger.info(f"成功创建持久化向量存储，包含{len(texts)}个文档块，持久化目录: {persist_dir}")
+                try:
+                    vectorstore = Chroma.from_documents(
+                        texts, 
+                        embeddings, 
+                        persist_directory=persist_dir
+                    )
+                    logger.info(f"成功创建持久化向量存储，包含{len(texts)}个文档块，持久化目录: {persist_dir}")
+                except ValueError as e:
+                    print_log_exception()
+                    # 回退到基类的实现
+                    return super().load_medical_knowledge(agent_type)
             else:
                 vectorstore = Chroma.from_documents(texts, embeddings)
                 logger.info(f"成功创建向量存储，包含{len(texts)}个文档块")

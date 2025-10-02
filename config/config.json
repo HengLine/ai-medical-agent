@@ -63,7 +63,9 @@
       "max_tokens": 2048,
       "embeddings": {
         "model_name": "text-embedding-v1",
-        "model_kwargs": {},
+        "model_kwargs": {
+          "device": "cpu"
+        },
         "encode_kwargs": {
           "normalize_embeddings": true
         }
