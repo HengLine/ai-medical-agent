@@ -1,10 +1,11 @@
 import os
 import sys
+
 from dotenv import load_dotenv
-
 from fastapi import FastAPI
-from hengline.config import config_reader
 
+from hengline.config import config_reader
+from hengline.logger import info, warning
 
 # 加载.env文件中的环境变量
 dotenv_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), '../../.env')
@@ -15,12 +16,10 @@ if os.path.exists(dotenv_path):
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
 # 导入日志模块
-from hengline.logger import logger
 from hengline.api.medical_api import register_routes, startup
 
 # 存储从命令行传递的智能体类型
 global_agent_type = None
-
 
 # 创建FastAPI应用
 app = FastAPI(
@@ -28,6 +27,7 @@ app = FastAPI(
     description="一个基于Ollama和LangChain的医疗知识问答API",
     version="1.0.0"
 )
+
 
 # 启动时初始化
 @app.on_event("startup")
@@ -45,11 +45,11 @@ def set_global_agent_type(agent_type: str):
 
     if not agent_type:
         global_agent_type = config_reader.get_all_config().get("default_llm", "ollama")
-        logger.warning(f"未指定智能体类型，将使用配置的默认值: {global_agent_type}")
+        warning(f"未指定智能体类型，将使用配置的默认值: {global_agent_type}")
     else:
         global_agent_type = agent_type
-        
-    logger.info(f"全局智能体类型已设置为: {global_agent_type}")
+
+    info(f"全局智能体类型已设置为: {global_agent_type}")
 
 
 # 注册路由

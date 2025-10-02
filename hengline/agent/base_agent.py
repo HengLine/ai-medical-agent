@@ -1,16 +1,16 @@
-import sys
 import os
+import sys
 from abc import ABC, abstractmethod
 from typing import List
 
-from langchain.text_splitter import CharacterTextSplitter
-from langchain_chroma import Chroma
 # LangChain和LangGraph相关导入
 from langchain.chains import RetrievalQA
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.tools import tool
+from langchain_chroma import Chroma
 from langchain_community.document_loaders import TextLoader
 from langchain_community.embeddings import FakeEmbeddings
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
-from langchain_core.tools import tool
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import create_react_agent
 
@@ -18,7 +18,7 @@ from langgraph.prebuilt import create_react_agent
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
 
 # 导入日志模块
-from hengline.logger import logger
+from hengline.logger import info, warning, error
 from utils.log_utils import print_log_exception
 
 # 导入工具和配置
@@ -42,13 +42,13 @@ class BaseMedicalAgent(ABC):
 
         # 初始化医疗工具
         self.medical_tools = MedicalTools()
-        
+
         # 从配置中获取知识库参数
         self.kb_config = self.config_reader.get_knowledge_base_config()
         self.data_dir = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-                self.kb_config.get("data_dir", "data")
-            )
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+            self.kb_config.get("data_dir", "data")
+        )
 
         # 加载RAG数据
         self.vectorstore = self.load_medical_knowledge(self.agent_type)
@@ -59,7 +59,7 @@ class BaseMedicalAgent(ABC):
             self.search = DuckDuckGoSearchRun()
         except ImportError:
             self.search = None
-            logger.warning("未能导入DuckDuckGoSearchRun，网络搜索功能将不可用")
+            warning("未能导入DuckDuckGoSearchRun，网络搜索功能将不可用")
 
         # 初始化语言模型
         self.llm = self._initialize_llm()
@@ -98,7 +98,7 @@ class BaseMedicalAgent(ABC):
                 verbose=retrieval_config.get("verbose", False)
             )
         except Exception as e:
-            logger.error(f"创建检索链时出错: {str(e)}")
+            error(f"创建检索链时出错: {str(e)}")
             return None
 
     def _define_tools(self):
@@ -134,16 +134,15 @@ class BaseMedicalAgent(ABC):
             )
             return agent_executor
         except Exception as e:
-            logger.error(f"初始化LangGraph智能体时出错: {str(e)}")
+            error(f"初始化LangGraph智能体时出错: {str(e)}")
             return None
-
 
     def get_knowledge_files(self):
         """检查知识库是否存在"""
         files = []
 
         if not os.path.exists(self.data_dir):
-            logger.error(f"知识库目录不存在: {self.data_dir}")
+            error(f"知识库目录不存在: {self.data_dir}")
             return files
 
         for root, _, filenames in os.walk(self.data_dir):
@@ -154,15 +153,14 @@ class BaseMedicalAgent(ABC):
                         files.append(os.path.join(root, filename))
         return files
 
-
     def load_medical_documents(self):
         """加载医疗知识库数据"""
         # 获取data目录下的所有txt文件
         files = self.get_knowledge_files()
-        logger.info(f"发现 {len(files)} 个医疗知识库文件")
+        info(f"发现 {len(files)} 个医疗知识库文件")
 
         if not files:
-            logger.warning("未找到医疗知识库文件。将创建一个空的向量存储。")
+            warning("未找到医疗知识库文件。将创建一个空的向量存储。")
             from langchain_core.documents import Document
             # 创建空文档列表并使用from_documents方法初始化Chroma
             empty_docs = [Document(page_content="这是一个空的医疗知识库文档", metadata={"source": "empty"})]
@@ -175,22 +173,21 @@ class BaseMedicalAgent(ABC):
                 loader = TextLoader(file, encoding="utf-8")
                 documents.extend(loader.load())
             except Exception as e:
-                logger.error(f"加载文件 {file} 时出错: {str(e)}")
+                error(f"加载文件 {file} 时出错: {str(e)}")
 
         return documents
-
 
     def load_medical_knowledge(self, agent_type: str):
         """加载医疗知识库数据"""
         try:
             # 从配置中获取嵌入模型参数
             # embeddings_config = self.config_reader.get_embeddings_config(agent_type)
-            
+
             # 加载文档
             documents = self.load_medical_documents()
 
             if not documents:
-                logger.warning("未能加载任何文档。将创建一个空的向量存储。")
+                warning("未能加载任何文档。将创建一个空的向量存储。")
                 from langchain_core.documents import Document
                 empty_docs = [Document(page_content="这是一个空的医疗知识库文档", metadata={"source": "empty"})]
                 return Chroma.from_documents(empty_docs, FakeEmbeddings(size=768))
@@ -207,16 +204,16 @@ class BaseMedicalAgent(ABC):
 
             # 从配置中获取持久化目录
             persist_dir = self.config_reader.get_persist_directory(agent_type)
-            
+
             # 创建向量存储
             if persist_dir:
                 try:
                     vectorstore = Chroma.from_documents(
-                        texts, 
-                        FakeEmbeddings(size=768), 
+                        texts,
+                        FakeEmbeddings(size=768),
                         persist_directory=persist_dir
                     )
-                    logger.info(f"成功创建持久化向量存储，包含{len(texts)}个文档块，持久化目录: {persist_dir}")
+                    info(f"成功创建持久化向量存储，包含{len(texts)}个文档块，持久化目录: {persist_dir}")
                 except ValueError as e:
                     if "dimension" in str(e).lower():
                         return self.recreate_vectorstore(e, persist_dir, texts)
@@ -224,11 +221,11 @@ class BaseMedicalAgent(ABC):
                         raise
             else:
                 vectorstore = Chroma.from_documents(texts, FakeEmbeddings(size=768))
-                logger.info(f"成功创建向量存储，包含{len(texts)}个文档块")
-            
+                info(f"成功创建向量存储，包含{len(texts)}个文档块")
+
             return vectorstore
         except Exception as e:
-            logger.error(f"加载医疗知识库时出错: {str(e)}")
+            error(f"加载医疗知识库时出错: {str(e)}")
             if "dimension" in str(e).lower():
                 return self.recreate_vectorstore(e, persist_dir, texts)
             else:
@@ -238,81 +235,81 @@ class BaseMedicalAgent(ABC):
 
     def recreate_vectorstore(self, e, persist_dir: str, texts):
         """重新创建向量存储"""
-        logger.warning(f"检测到向量维度不匹配错误: {str(e)}，将重新创建向量存储")
+        warning(f"检测到向量维度不匹配错误: {str(e)}，将重新创建向量存储")
         import shutil
         import time
         import os
         import subprocess
         import sys
-        
+
         # 先尝试重命名旧目录，再重新创建（解决Windows文件锁定问题）
         dir_exists = os.path.exists(persist_dir)
         if dir_exists:
             temp_dir = None
-            
+
             # 1. 尝试常规重命名
             try:
                 timestamp = int(time.time())
                 temp_dir = f"{persist_dir}_old_{timestamp}"
                 os.rename(persist_dir, temp_dir)
-                logger.info(f"成功将旧向量存储目录重命名为: {temp_dir}")
+                info(f"成功将旧向量存储目录重命名为: {temp_dir}")
             except (PermissionError, OSError) as e:
-                logger.warning(f"无法重命名目录（文件可能被锁定）: {str(e)}，将尝试强制删除")
+                warning(f"无法重命名目录（文件可能被锁定）: {str(e)}，将尝试强制删除")
                 temp_dir = None
-              
+
             if temp_dir is None:
                 # 2. 尝试常规删除
                 try:
                     shutil.rmtree(persist_dir)
-                    logger.info(f"成功删除旧的向量存储目录: {persist_dir}")
+                    info(f"成功删除旧的向量存储目录: {persist_dir}")
                 except PermissionError as pe:
-                    logger.warning(f"常规删除失败: {str(pe)}，尝试强制删除")
-                    
+                    warning(f"常规删除失败: {str(pe)}，尝试强制删除")
+
                     # 3. 尝试强制删除（Windows特有方法）
                     try:
                         if sys.platform == 'win32':
                             # 使用Windows命令行强制删除
                             cmd = f'rmdir /s /q "{persist_dir}"' if os.path.isdir(persist_dir) else f'del /f /q "{persist_dir}"'
                             subprocess.run(cmd, shell=True, check=True)
-                            logger.info(f"成功使用命令行强制删除目录: {persist_dir}")
+                            info(f"成功使用命令行强制删除目录: {persist_dir}")
                         else:
                             # Linux/Mac下的强制删除
                             shutil.rmtree(persist_dir, ignore_errors=True)
-                            logger.info(f"成功强制删除目录: {persist_dir}")
+                            info(f"成功强制删除目录: {persist_dir}")
                     except Exception as force_e:
-                        logger.error(f"强制删除也失败: {str(force_e)}")
-                
+                        error(f"强制删除也失败: {str(force_e)}")
+
                 # 检查删除是否成功
                 dir_still_exists = os.path.exists(persist_dir)
                 if dir_still_exists:
-                    logger.warning(f"所有删除方法都失败，将尝试直接创建新的向量存储并强制覆盖现有内容")
+                    warning(f"所有删除方法都失败，将尝试直接创建新的向量存储并强制覆盖现有内容")
                     # 不修改persist_dir，继续执行后续代码，让Chroma尝试直接覆盖
-        
+
         # 创建新的向量存储（即使目录存在也尝试创建，实现强制覆盖）
         try:
             # 直接尝试创建向量存储，即使目录存在
             vectorstore = Chroma.from_documents(
-                texts, 
-                FakeEmbeddings(size=768), 
+                texts,
+                FakeEmbeddings(size=768),
                 persist_directory=persist_dir
             )
-            logger.info(f"成功重新创建持久化向量存储，包含{len(texts)}个文档块，路径: {persist_dir}")
+            info(f"成功重新创建持久化向量存储，包含{len(texts)}个文档块，路径: {persist_dir}")
             return vectorstore
         except Exception as create_e:
             print_log_exception()
-            logger.error(f"重新创建向量存储时出错: {str(create_e)}")
+            error(f"重新创建向量存储时出错: {str(create_e)}")
             # 如果强制覆盖也失败，使用带时间戳的备用路径
             # if dir_exists:
             #     timestamp = int(time.time())
             #     backup_persist_dir = f"{persist_dir}_{timestamp}"
-            #     logger.warning(f"无法在现有路径创建向量存储: {str(create_e)}，将使用备用路径: {backup_persist_dir}")
-                
+            #     warning(f"无法在现有路径创建向量存储: {str(create_e)}，将使用备用路径: {backup_persist_dir}")
+
             #     vectorstore = Chroma.from_documents(
             #         texts, 
             #         FakeEmbeddings(size=768), 
             #         persist_directory=backup_persist_dir
             #     )
-            #     logger.info(f"成功在备用路径创建向量存储，包含{len(texts)}个文档块，路径: {backup_persist_dir}")
+            #     info(f"成功在备用路径创建向量存储，包含{len(texts)}个文档块，路径: {backup_persist_dir}")
             #     return vectorstore
             # else:
             #     raise
@@ -397,7 +394,7 @@ class BaseMedicalAgent(ABC):
                 return "智能体未正确初始化，无法回答问题"
         except Exception as e:
             # 捕获工具调用相关的错误
-            logger.error(f"处理问题时出错: {str(e)}")
+            error(f"处理问题时出错: {str(e)}")
             # 尝试直接使用语言模型回答
             if self.llm:
                 try:

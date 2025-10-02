@@ -9,10 +9,9 @@ from fastapi import FastAPI, HTTPException
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
 # 导入日志模块
-from hengline.logger import logger
+from hengline.logger import info, error
 
 # 导入配置读取器和智能体工厂
-from hengline.config import config_reader
 from hengline.agent.medical_agent import MedicalAgentFactory
 from hengline.api.medical_model import QueryRequest, QueryResponse, LLMConfig, ConfigResponse, GenerationRequest, GenerationResponse
 
@@ -25,18 +24,18 @@ def startup(agent_type: str = None):
     """应用启动时初始化医疗智能体"""
     global medical_agent, generative_agent
     try:
-        logger.info("正在初始化医疗智能体...")
+        info("正在初始化医疗智能体...")
         # 确定使用的智能体类型
         agent_type = agent_type if agent_type else config_reader.get_all_config().get("default_llm", "ollama")
-        logger.info(f"使用 {agent_type} 类型的智能体")
+        info(f"使用 {agent_type} 类型的智能体")
         # 使用工厂创建相应类型的智能体
         medical_agent, generative_agent = MedicalAgentFactory.create_agent(agent_type)
-        logger.info("医疗智能体初始化成功")
+        info("医疗智能体初始化成功")
 
         # 对于生成式智能体，额外记录支持的功能
-        logger.info("生成式智能体支持多种内容生成模式：general_info, detailed_explanation, patient_education, medical_case")
+        info("生成式智能体支持多种内容生成模式：general_info, detailed_explanation, patient_education, medical_case")
     except Exception as e:
-        logger.error(f"医疗智能体初始化失败: {str(e)}")
+        error(f"医疗智能体初始化失败: {str(e)}")
         # 即使初始化失败，API仍会启动，但调用时会返回错误
 
 
@@ -93,11 +92,11 @@ def register_routes(app: FastAPI):
 
             # 重新初始化医疗智能体
             try:
-                logger.info("更新配置后，重新初始化医疗智能体...")
+                info("更新配置后，重新初始化医疗智能体...")
                 medical_agent = MedicalAgentFactory.create_agent(default_llm)
-                logger.info("医疗智能体重新初始化成功")
+                info("医疗智能体重新初始化成功")
             except Exception as e:
-                logger.error(f"医疗智能体重新初始化失败: {str(e)}")
+                error(f"医疗智能体重新初始化失败: {str(e)}")
                 # 不抛出异常，配置已成功更新，只是智能体重初始化失败
 
             return ConfigResponse(
@@ -144,27 +143,27 @@ def register_routes(app: FastAPI):
         if generative_agent is None:
             raise HTTPException(status_code=503, detail="医疗智能体未初始化，请稍后再试")
 
-        if not request.topic or request.topic.strip() == "":
-            raise HTTPException(status_code=400, detail="主题不能为空")
+        if not request.question or request.question.strip() == "":
+            raise HTTPException(status_code=400, detail="问题不能为空")
 
         try:
             # 检查是否是生成式智能体
             if not hasattr(generative_agent, "generate_content"):
                 # 获取当前使用的智能体类型
                 agent_type = config_reader.get_all_config().get("default_llm", "ollama")
-                raise HTTPException(status_code=400, 
-                                   detail=f"当前使用的是{agent_type}类型智能体，不支持生成式功能。请切换到generative类型智能体。")
+                raise HTTPException(status_code=400,
+                                    detail=f"当前使用的是{agent_type}类型智能体，不支持生成式功能。请切换到generative类型智能体。")
 
             # 调用生成式智能体生成内容
             result = generative_agent.generate_content(
-                topic=request.topic,
-                generation_type=request.generation_type
+                topic=request.question,
+                generation_type=request.type
             )
 
             # 构建响应
             response = GenerationResponse(
-                generated_content=result,
-                generation_type=request.generation_type,
+                answer=result,
+                type=request.type,
                 request_id=request.request_id,
                 timestamp=datetime.now().isoformat()
             )

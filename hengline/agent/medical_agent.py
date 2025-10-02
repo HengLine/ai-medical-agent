@@ -6,7 +6,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
 # 导入日志模块
-from hengline.logger import logger
+from hengline.logger import info, error
 
 # 导入不同类型的医疗智能体
 from hengline.agent.ollama.ollama_medical_agent import OllamaMedicalAgent
@@ -35,6 +35,7 @@ class MedicalAgentFactory:
             return MedicalAgentFactory.create_api_agent(agent_type)
 
     """创建基于API的医疗智能体"""
+
     @staticmethod
     def create_api_agent(agent_type: str) -> object:
         if agent_type == "openai":
@@ -61,21 +62,21 @@ def main():
 
     try:
         # 创建指定类型的智能体
-        logger.info(f"正在初始化 {args.type} 类型的医疗智能体...")
+        info(f"正在初始化 {args.type} 类型的医疗智能体...")
         agent, generative_agent = MedicalAgentFactory.create_agent(args.type)
-        logger.info(f"{args.type} 医疗智能体初始化成功！")
+        info(f"{args.type} 医疗智能体初始化成功！")
 
         # 运行智能体的交互模式
         run_interactive_mode(agent, args.type)
 
     except Exception as e:
-        logger.error(f"初始化智能体时出错: {str(e)}")
+        error(f"初始化智能体时出错: {str(e)}")
         sys.exit(1)
 
 
 def run_interactive_mode(agent: object, agent_type: str):
     """运行智能体的交互模式"""
-    logger.info(f"基于{agent_type}的医疗智能体已启动。输入'退出'或'quit'结束会话。")
+    info(f"基于{agent_type}的医疗智能体已启动。输入'退出'或'quit'结束会话。")
 
     try:
         # 进入交互模式
@@ -86,22 +87,22 @@ def run_interactive_mode(agent: object, agent_type: str):
                     # 对于远程API智能体，显示API调用统计
                     if agent_type == "openai" and hasattr(agent, "get_api_stats"):
                         stats = agent.get_api_stats()
-                        logger.info(f"\nAPI调用统计: {stats}")
-                    logger.info("感谢使用医疗智能体，再见！")
+                        info(f"\nAPI调用统计: {stats}")
+                    info("感谢使用医疗智能体，再见！")
                     break
 
                 # 处理用户问题
                 result = agent.run(user_question)
                 print(f"回答: {result}")  # 保留控制台输出以便用户查看
-                logger.info(f"处理问题: {user_question[:50]}...")
+                info(f"处理问题: {user_question[:50]}...")
 
             except KeyboardInterrupt:
-                logger.info("\n程序被用户中断，再见！")
+                info("\n程序被用户中断，再见！")
                 break
             except Exception as e:
-                logger.error(f"处理问题时出错: {str(e)}")
+                error(f"处理问题时出错: {str(e)}")
     except Exception as e:
-        logger.error(f"交互模式运行出错: {str(e)}")
+        error(f"交互模式运行出错: {str(e)}")
 
 
 if __name__ == "__main__":

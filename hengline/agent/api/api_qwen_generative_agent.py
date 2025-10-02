@@ -10,7 +10,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
 
 # 导入日志模块
-from hengline.logger import logger
+from hengline.logger import info, error
 
 # 从基类导入
 from hengline.agent.api.api_qwen_base_agent import QwenBaseAgent
@@ -33,7 +33,7 @@ class QwenGenerativeAgent(QwenBaseAgent):
         # 支持的生成类型
         self.supported_generation_types = ["general_info", "detailed_explanation", "patient_education", "medical_case"]
 
-        logger.info("通义千问生成式智能体初始化完成")
+        info("通义千问生成式智能体初始化完成")
 
     def _create_generative_chains(self):
         """创建不同类型的生成链"""
@@ -69,7 +69,7 @@ class QwenGenerativeAgent(QwenBaseAgent):
 
             return generative_chains
         except Exception as e:
-            logger.error(f"创建生成链时出错: {str(e)}")
+            error(f"创建生成链时出错: {str(e)}")
             return {}
 
     def generate_content(self, topic, generation_type="general_info"):
@@ -111,7 +111,7 @@ class QwenGenerativeAgent(QwenBaseAgent):
 
             return generated_content
         except Exception as e:
-            logger.error(f"生成内容时出错: {str(e)}")
+            error(f"生成内容时出错: {str(e)}")
             return f"生成内容时出错: {str(e)}"
 
     def _determine_generation_type(self, question):
@@ -144,7 +144,7 @@ class QwenGenerativeAgent(QwenBaseAgent):
                 # 组合回答
                 result = f"{result}\n\n\n===== 额外生成内容 ({gen_type}) =====\n{extra_content}"
             except Exception as e:
-                logger.error(f"生成额外内容时出错: {str(e)}")
+                error(f"生成额外内容时出错: {str(e)}")
                 # 不影响基本回答
 
         return result

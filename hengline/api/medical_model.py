@@ -52,8 +52,8 @@ class ConfigResponse(BaseModel):
 
 class GenerationRequest(BaseModel):
     """生成式内容请求模型"""
-    topic: str
-    generation_type: str = Field(default="general_info", 
+    question: str
+    type: str = Field(default="general_info",
                                 description="生成类型",
                                 pattern="^(general_info|detailed_explanation|patient_education|medical_case)$")
     request_id: Optional[str] = None
@@ -61,7 +61,7 @@ class GenerationRequest(BaseModel):
 
 class GenerationResponse(BaseModel):
     """生成式内容响应模型"""
-    generated_content: str
-    generation_type: str
+    answer: str
+    type: str
     request_id: Optional[str] = None
     timestamp: str

@@ -10,7 +10,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
 
 # 导入日志模块
-from hengline.logger import logger
+from hengline.logger import info, warning, error
 
 # 从基类导入
 from hengline.agent.vllm.vllm_base_agent import VLLMBaseAgent
@@ -33,13 +33,13 @@ class VllmGenerativeAgent(VLLMBaseAgent):
         # 创建生成链
         self._create_generative_chains()
 
-        logger.info("vLLM生成式医疗智能体初始化完成")
+        info("vLLM生成式医疗智能体初始化完成")
 
     def _create_generative_chains(self):
         """创建各种生成类型的链"""
         # 检查语言模型是否已初始化
         if not self.llm:
-            logger.warning("语言模型尚未初始化，无法创建生成链")
+            warning("语言模型尚未初始化，无法创建生成链")
             return
 
         # 通用信息生成提示
@@ -93,7 +93,7 @@ class VllmGenerativeAgent(VLLMBaseAgent):
         self.generative_chains["patient_education"] = patient_education_template | self.llm | StrOutputParser()
         self.generative_chains["medical_case"] = medical_case_template | self.llm | StrOutputParser()
 
-        logger.info(f"成功创建{len(self.generative_chains)}种生成类型的链")
+        info(f"成功创建{len(self.generative_chains)}种生成类型的链")
 
     def generate_content(self, topic, generation_type="general_info"):
         """生成医疗内容
@@ -109,21 +109,21 @@ class VllmGenerativeAgent(VLLMBaseAgent):
         try:
             # 验证生成类型
             if generation_type not in self.generative_chains:
-                logger.warning(f"不支持的生成类型: {generation_type}，将使用默认类型 general_info")
+                warning(f"不支持的生成类型: {generation_type}，将使用默认类型 general_info")
                 generation_type = "general_info"
 
             # 验证主题
             if not topic or not isinstance(topic, str) or topic.strip() == "":
                 raise ValueError("主题必须是非空字符串")
 
-            logger.info(f"正在生成关于'{topic}'的{generation_type}内容")
+            info(f"正在生成关于'{topic}'的{generation_type}内容")
 
             # 执行生成链
             content = self.generative_chains[generation_type].invoke({"topic": topic})
 
             return content
         except Exception as e:
-            logger.error(f"生成内容时出错: {str(e)}")
+            error(f"生成内容时出错: {str(e)}")
             return f"生成内容时出错: {str(e)}"
 
     def _determine_generation_type(self, query):
@@ -189,7 +189,7 @@ class VllmGenerativeAgent(VLLMBaseAgent):
 
             return content
         except Exception as e:
-            logger.error(f"运行智能体时出错: {str(e)}")
+            error(f"运行智能体时出错: {str(e)}")
             return f"运行智能体时出错: {str(e)}"
 
 

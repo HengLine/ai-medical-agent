@@ -10,7 +10,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
 
 # 导入日志模块
-from hengline.logger import debug, info, logger
+from hengline.logger import info, warning, error, debug
 from utils.log_utils import print_log_exception
 
 # 从基类导入
@@ -31,13 +31,13 @@ class QwenMedicalAgent(QwenBaseAgent):
         # 调用基类初始化
         super().__init__()
 
-        logger.info("通义千问医疗智能体初始化完成")
+        info("通义千问医疗智能体初始化完成")
 
     def _define_tools(self):
         """定义智能体可以使用的工具"""
         # 如果模型不支持工具调用，返回空列表
         if not self.model_supports_tools:
-            logger.warning("当前模型不支持工具调用，将跳过工具定义")
+            warning("当前模型不支持工具调用，将跳过工具定义")
             return []
 
         # 定义工具列表
@@ -93,7 +93,7 @@ class QwenMedicalAgent(QwenBaseAgent):
         try:
             # 检查是否有可用的检索链
             if not self.retrieval_chain:
-                logger.warning("检索链未初始化，正在创建...")
+                warning("检索链未初始化，正在创建...")
                 self.retrieval_chain = self._create_retrieval_chain()
 
                 if not self.retrieval_chain:
@@ -111,7 +111,7 @@ class QwenMedicalAgent(QwenBaseAgent):
             else:
                 return str(result)
         except Exception as e:
-            logger.error(f"查询知识库时出错: {str(e)}")
+            error(f"查询知识库时出错: {str(e)}")
             print_log_exception()
             return f"查询知识库时出错: {str(e)}"
 
@@ -140,7 +140,7 @@ class QwenMedicalAgent(QwenBaseAgent):
 
             return symptoms
         except Exception as e:
-            logger.error(f"提取症状时出错: {str(e)}")
+            error(f"提取症状时出错: {str(e)}")
             print_log_exception()
             return f"提取症状时出错: {str(e)}"
 
@@ -173,7 +173,7 @@ class QwenMedicalAgent(QwenBaseAgent):
 
             return assessment
         except Exception as e:
-            logger.error(f"评估症状严重程度时出错: {str(e)}")
+            error(f"评估症状严重程度时出错: {str(e)}")
             return f"评估症状严重程度时出错: {str(e)}"
 
     def _agent_node(self, state: MedicalAgentState):
@@ -228,7 +228,7 @@ class QwenMedicalAgent(QwenBaseAgent):
 
             # 如果模型支持工具调用，使用LangGraph智能体
             if self.model_supports_tools and hasattr(self, "agent") and self.agent is not None:
-                logger.info(f"使用支持工具调用的LangGraph智能体回答问题: {question}")
+                info(f"使用支持工具调用的LangGraph智能体回答问题: {question}")
 
                 debug(f"LangGraph智能体配置: {self.agent}")
                 # 执行智能体
@@ -243,7 +243,7 @@ class QwenMedicalAgent(QwenBaseAgent):
                     return "无法获取智能体的回答"
             else:
                 # 否则使用简化的问答链
-                logger.info(f"使用简化的问答链回答问题: {question}")
+                info(f"使用简化的问答链回答问题: {question}")
 
                 # 创建问答提示
                 qa_prompt = ChatPromptTemplate.from_template(
@@ -260,7 +260,7 @@ class QwenMedicalAgent(QwenBaseAgent):
 
                 return answer
         except Exception as e:
-            logger.error(f"运行智能体时出错: {str(e)}")
+            error(f"运行智能体时出错: {str(e)}")
             print_log_exception()
             return f"运行智能体时出错: {str(e)}"
 

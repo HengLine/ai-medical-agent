@@ -7,23 +7,22 @@
 
 import os
 import sys
-from dotenv import load_dotenv
 
 import uvicorn
+from dotenv import load_dotenv
+
+from hengline.logger import info, warning, error
 
 # 加载.env文件中的环境变量
 dotenv_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), '.env')
 if os.path.exists(dotenv_path):
     load_dotenv(dotenv_path)
-    print(f"已加载.env文件: {dotenv_path}")
+    info(f"==============已加载.env文件: {dotenv_path}")
 else:
-    print(f"警告: 未找到.env文件，将使用系统环境变量")
+    warning(f"==============警告: 未找到.env文件，将使用系统环境变量")
 
 # 确保项目根目录在Python路径中
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
-
-# 导入项目的日志模块
-from hengline.logger import logger
 
 
 # 确保项目根目录在Python路径中
@@ -32,23 +31,23 @@ def ensure_project_path():
     project_root = os.path.abspath(os.path.dirname(__file__))
     if project_root not in sys.path:
         sys.path.append(project_root)
-        logger.info(f"已将项目根目录添加到Python路径: {project_root}")
+        info(f"已将项目根目录添加到Python路径: {project_root}")
 
 
 # 启动API服务
 def start_api_server(host: str = "0.0.0.0", port: int = 8000, reload: bool = False, agent_type: str = None):
     """启动FastAPI服务"""
     # 使用项目的日志模块
-    logger.info(f"准备启动医疗AI智能体API服务...")
-    logger.info(f"服务将在 http://{host}:{port} 启动")
-    logger.info(f"API文档地址: http://{host}:{port}/docs")
+    info(f"准备启动医疗AI智能体API服务...")
+    info(f"服务将在 http://{host}:{port} 启动")
+    info(f"API文档地址: http://{host}:{port}/docs")
 
     # 导入api_app并设置全局智能体类型
     try:
         from hengline.api import api_app
         api_app.set_global_agent_type(agent_type)
     except ImportError as e:
-        logger.error(f"无法导入api_app或设置全局智能体类型: {str(e)}")
+        error(f"无法导入api_app或设置全局智能体类型: {str(e)}")
 
     # 启动服务器
     try:
@@ -60,9 +59,9 @@ def start_api_server(host: str = "0.0.0.0", port: int = 8000, reload: bool = Fal
             log_level="info"
         )
     except KeyboardInterrupt:
-        logger.info("用户中断，正在关闭服务...")
+        info("用户中断，正在关闭服务...")
     except Exception as e:
-        logger.error(f"服务启动失败: {str(e)}")
+        error(f"服务启动失败: {str(e)}")
         raise
 
 
@@ -86,7 +85,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # 记录选择的智能体类型
-    logger.info(f"正在初始化医疗智能体...")
+    info(f"正在初始化医疗智能体...")
 
     # 启动服务，传递智能体类型参数
     start_api_server(
